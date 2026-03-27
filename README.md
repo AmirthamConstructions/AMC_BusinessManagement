@@ -1,433 +1,185 @@
-# AMC Business Management System
+# AMC Business Management — Migration Guide & Considerations
 
-## 📋 Overview
+🚀 **Goal**: Migrate the existing Google Apps Script + Google Sheets application into an Angular Single Page Application (SPA) backed by REST APIs (Spring Boot or Node.js) and MongoDB Atlas.
 
-**AMC Business Management** is a full-featured, web-based accounting and business management system built for **Amirtham Constructions (AC)**. It is implemented entirely on the **Google Apps Script** platform, using **Google Sheets** as the backend database and **Google Apps Script HTML Service** as the frontend framework.
-
-The application provides a complete suite of financial management tools including transaction tracking, balance sheets, profit & loss reporting, GST compliance (GST-1R Outward & GST-2B Inward), site/project management, and materials inventory — all accessible through a responsive, single-page-application-style web interface deployed as a Google Web App.
+This README summarizes the migration considerations, challenges, recommended architecture, data model guidance, API ideas, migration plan, and next actionable steps. It’s written to be both technical and actionable while remaining readable.
 
 ---
 
-## 🏗️ Architecture
+## 🧭 Quick Summary
 
-### Technology Stack
-
-| Layer | Technology |
-|---|---|
-| **Frontend** | HTML5, CSS3, Vanilla JavaScript, jQuery, Select2, ApexCharts |
-| **Backend** | Google Apps Script (server-side `.gs` files) |
-| **Database** | Google Sheets (with Named Ranges) |
-| **Deployment** | Google Apps Script Web App (`doGet()`) |
-| **PDF Generation** | `HtmlService` → Blob → Google Drive |
-| **Fonts** | Google Fonts (Poppins, Roboto, Montserrat) |
-| **Icons** | Font Awesome 6.x |
-
-### Design Pattern
-
-The application follows a **client-server architecture** within the Google Apps Script ecosystem:
-
-```
-┌──────────────────────────────────────────────────────────────────┐
-│                         Web Browser                              │
-│  ┌────────────────────────────────────────────────────────────┐  │
-│  │  template.html (Shell / Layout)                            │  │
-│  │  ┌──────────┐  ┌───────────────────────────────────────┐   │  │
-│  │  │ Sidebar  │  │  Content Area (SPA-style page load)   │   │  │
-│  │  │ Nav Menu │  │  ┌─────────────────────────────────┐  │   │  │
-│  │  │          │  │  │ index.html / transactions.html  │  │   │  │
-│  │  │          │  │  │ balance_sheet.html / pnl.html   │  │   │  │
-│  │  │          │  │  │ sites.html / materials.html     │  │   │  │
-│  │  │          │  │  │ gst_*.html                      │  │   │  │
-│  │  │          │  │  └─────────────────────────────────┘  │   │  │
-│  │  └──────────┘  └───────────────────────────────────────┘   │  │
-│  └────────────────────────────────────────────────────────────┘  │
-│                              │                                   │
-│                   google.script.run.*()                           │
-│                              │                                   │
-├──────────────────────────────┼───────────────────────────────────┤
-│              Google Apps Script Server                            │
-│  ┌─────────────┐ ┌──────────────────┐ ┌──────────────────────┐  │
-│  │ gstemplate   │ │ gstransactions   │ │ gsdashboard          │  │
-│  │ gsbalance_*  │ │ gssites          │ │ gsmaterials          │  │
-│  │ gspnl        │ │ gsgst2b          │ │ gsgst1r_outward      │  │
-│  │ gsgstbalance │ │ gsgstnl          │ │ gssample             │  │
-│  └──────┬──────┘ └────────┬─────────┘ └──────────┬───────────┘  │
-│         │                 │                       │              │
-│         └─────────────────┼───────────────────────┘              │
-│                           │                                      │
-│                   SpreadsheetApp API                              │
-│                           │                                      │
-│              ┌────────────┴────────────┐                         │
-│              │   Google Sheets (DB)     │                         │
-│              │   Named Ranges           │                         │
-│              └─────────────────────────┘                         │
-└──────────────────────────────────────────────────────────────────┘
-```
-
-### Routing & Page Loading
-
-The `doGet(e)` function in `gstemplate.gs` serves as the **router**. It reads the `?page=` query parameter and dynamically includes the corresponding HTML template inside the `template.html` shell layout using `HtmlService.createTemplateFromFile()` and the `include()` helper:
-
-```
-URL: ?page=dashboard     → includes index.html
-URL: ?page=transactions  → includes transactions.html
-URL: ?page=balance_sheet → includes balance_sheet.html
-URL: ?page=profit_loss   → includes pnl.html
-URL: ?page=sites         → includes sites.html
-URL: ?page=materials     → includes materials.html
-URL: ?page=gst_balancesheet → includes gst_balancesheet.html
-URL: ?page=gst_profit_loss  → includes gst_profit_loss.html
-URL: ?page=gst1r_outward    → includes gst1r_outward.html
-URL: ?page=gst_2b           → includes gst_2b.html
-```
+- Current system: Google Apps Script (.gs) + Google Sheets (Named Ranges) + HTML Service frontend.
+- Target: Angular SPA frontend + REST API backend (Spring Boot or Node.js/TypeScript) + MongoDB Atlas (free tier for dev).
+- Key migrations: server-side logic → REST endpoints, Sheets → MongoDB (or Sheets via Sheets API), client rewrite to Angular, PDF generation migration, auth redesign.
 
 ---
 
-## 📁 File Structure & Detailed Descriptions
+## ⚠️ Major Challenges to Expect
 
-### Core Infrastructure Files
-
-#### `gstemplate.gs` — Application Router & Entry Point
-- **`doGet(e)`**: Main entry point for the Google Web App. Reads the `page` query parameter and maps it to the corresponding HTML template file. Defaults to `'dashboard'` (index.html).
-- **`include(filename)`**: Helper function that enables server-side HTML includes via `HtmlService.createHtmlOutputFromFile()`.
-- **`getScriptUrl()`**: Returns the deployed script URL using `ScriptApp.getService().getUrl()`, used for generating navigation links.
-
-#### `template.html` — Master Layout / Shell
-- The outer HTML shell that wraps all pages.
-- Contains the **sidebar navigation** with links to all 10 modules (Dashboard, Transactions, Balance Sheet, Profit/Loss, Sites, GST Balance Sheet, GST Profit/Loss, GST-1R Outward, GST-2B, Materials).
-- Uses **Google Apps Script templating** (`<?= ?>` and `<?!= ?>`) to dynamically inject the content page and highlight the active navigation item.
-- Implements a **responsive hamburger menu** for mobile screens (< 992px).
-- **CSS Variables**: `--sidebar-width: 260px`, `--teal: #dca612`, `--aqua: #f0d795`, `--dark: #23272b`.
-- Sidebar brand: **"Amirtham Constructions – Accounts System"** with logo abbreviation "AC".
+- google.script.run → REST: convert every server call (reads, writes, exports) into REST endpoints.
+- Spreadsheet-specific logic: named-range semantics, array-formulas, fuzzy header mapping (GST modules), and implicit sheet behavior must be ported carefully.
+- Data model: Google Sheets is a semi-structured datastore. Moving to MongoDB requires designing stable schemas and deciding which data to embed vs reference.
+- Concurrency & quotas: Sheets has concurrency quirks and Apps Script quotas; a backend + DB solves some problems but introduces transaction/consistency considerations.
+- Auth & security: implement OAuth2 (Google Sign-In), JWT, role-based access control, secure service account usage for Drive/Sheets if required.
+- PDF generation: move from HtmlService → PDF (Apps Script) to server-side PDF tooling (Puppeteer, wkhtmltopdf, or a managed microservice).
+- UI rewrite: move from server-templated HTML + jQuery/Select2 to Angular components, Reactive Forms, Angular-friendly select widgets.
 
 ---
 
-### Module Files (Backend `.gs` + Frontend `.html` Pairs)
+## ✅ Key Technical Recommendations
+
+- Backend choice:
+  - Use **Node.js + TypeScript (NestJS/Express)** for faster iteration and unified language across stack.
+  - Use **Spring Boot** if your team prefers Java and needs stricter typing and enterprise features.
+- Database:
+  - Start with **MongoDB Atlas** free tier for flexibility. Design normalized collections and indexes up front.
+  - Plan for migration to a paid tier or alternate DB (Postgres) if you need stronger relational integrity or heavy aggregation.
+- Authentication:
+  - Use **Google Sign-In (OIDC)** to authenticate users, then exchange idToken for your own short-lived **JWT** with RBAC claims.
+- PDF generation:
+  - Use **Puppeteer** (Node) or a microservice for HTML → PDF conversion and store files in Cloud Storage or Google Drive (service account).
+- Frontend:
+  - Angular CLI (v15+) + TypeScript, router-based pages, separate feature modules per domain (transactions, dashboard, gst, sites, materials).
+  - Replace jQuery/Select2 with Angular-native controls (ngx-select, Angular Material select, or ng-select).
+  - Use **ng-apexcharts** to preserve existing dashboard charts.
+- Observability & CI/CD:
+  - GitHub Actions → Cloud Run/Cloud Build, Cloud Logging/Prometheus for monitoring, Secret Manager for secrets.
 
 ---
 
-### 1. Dashboard Module
+## 🗄️ Suggested MongoDB Collections (Core)
 
-#### `gsdashboard.gs` — Dashboard Data Aggregation
-- **`dashGetNamedRangeData(rangeName)`**: Generic helper that reads a Named Range from the spreadsheet, extracts headers from the first row, and returns an array of objects keyed by header names.
-- **`dashGetDashboardData()`**: Main function that aggregates all dashboard data into a single JSON response:
-  - **KPIs** (from `Dashboard` sheet, cells I3–I7): Revenue, Expenditure, Total Profit, Company Expenses, Net Profit.
-  - **Chart 1 – Company Profit Growth**: Reads Named Range `DASHCUMPROFIT`, parses dates and cumulative profit values, sorts chronologically, returns ISO date strings + values.
-  - **Chart 2 – Profit Percentage by Site**: Reads Named Range `DASHSITEWISE`, extracts site names and profit percentages (with automatic decimal-to-percentage conversion).
-  - **Chart 3 – Headwise Expenditure**: Reads Named Range `DASHHEADWISE`, extracts expenditure heads and amounts (filters out zero/empty amounts).
+Design collections to map domain objects and preserve audit trails. Examples below are concise — add indexes and validations as needed.
 
-#### `index.html` — Dashboard UI
-- **KPI Cards**: 7-column grid layout displaying 5 KPI values (Revenue, Expenditure, Total Profit, Company Expenses, Net Profit) with 2 empty placeholder cards.
-- **Chart 1** (ApexCharts Area Chart): Smooth area chart with green fill showing cumulative profit growth over time with datetime x-axis.
-- **Chart 2** (ApexCharts Bar Chart): Distributed vertical bar chart showing profit percentage per site. Dynamically calculates chart width based on number of sites (70px per bar, minimum 600px). Includes data labels.
-- **Chart 3** (ApexCharts Horizontal Bar Chart): Horizontal bar chart showing head-wise expenditure breakdown. Height scales dynamically (45px per category, minimum 400px). External data labels offset 10px right.
-- **Layout**: 60/40 column split — Column 1 has Chart 1 + Chart 2, Column 2 has Chart 3.
-- **Responsive**: Stacks columns vertically on mobile, minimum chart width of 600px with horizontal scroll.
+- users
+  - { _id, email, name, roles: ["admin","accountant","viewer"], createdAt, lastLogin }
 
----
+- sites
+  - { _id, siteId: "ACxxxxx", name, client, address, contact, companyAccount, expenseHead, incomeHead, createdAt, isActive }
 
-### 2. Transactions Module
+- transactions
+  - { _id, transactionId, date (ISO), company, siteId, type: "Credit"|"Debit", nature, description, amount, party, invoiceNo, gstNo, companyAccount, mode, notes, createdBy, createdAt, updatedAt }
 
-#### `gstransactions.gs` — Transaction CRUD & Server-Side Pagination
-- **Dimension Helpers**:
-  - `sup_getDimensions()`: Reads the `Dimensions` sheet to get dropdown values (Site Names, Income Heads, Expense Heads, etc.) organized by column.
-  - `sup_addDimensionValue(colName, value)`: Appends a new dimension value to a specific column.
-  - `sup_generateUniqueSiteId()`: Generates unique Site IDs in format `AC` + 5 random digits.
-  - `sup_addSite(siteObj)`: Adds a new site to the Dimensions sheet.
-- **Transaction CRUD**:
-  - `sup_addTransaction(txObj)`: Adds a new transaction with server-generated Transaction ID (format: `TXN` + `yyMMddHHmmss`). Finds the next empty row by scanning Column A.
-  - `sup_updateTransactionById(transactionId, updatedObj)`: Updates a transaction row identified by Transaction ID. Preserves Column A (S.No) and updates from Column B onwards.
-  - `sup_deleteTransactionById(transactionId)`: Deletes a transaction row by Transaction ID.
-- **Server-Side Filtering & Pagination**:
-  - `sup_getFilteredData_(params)`: Internal helper that reads all transactions, applies date filters (preset: 1m/6m/1y or custom range) and search filters (by specific column or all columns).
-  - `sup_getTransactionsPaginated(params)`: Wraps filtering with pagination logic (configurable `perPage`, defaults to 25). Returns `{ rows, total, pages, page }`.
-- **PDF Export**:
-  - `sup_exportTransactionsPdf(params, meta)`: Generates a filtered PDF report with 15 columns, saves to Google Drive, returns a shareable view URL.
+- materials
+  - { _id, sNo, date, billNo, itemName, quantity, rate, amount, siteId, shopName, notes, createdAt }
 
-#### `transactions.html` — Transactions UI
-- **Features**: Full CRUD with inline editing, server-side pagination (25 per page), search (by All, Site Name, Nature/Head, Type D/C), date filtering (1m/6m/1y/custom), PDF export.
-- **"New Transaction" Modal**: 15-field form with Select2 dropdowns for Site Name and Nature (Head). Nature options dynamically change based on Type (Credit → Income Heads, Debit → Expense Heads).
-- **Bulk Entry Workflow**: After saving, the modal stays open with Amount and Nature cleared for rapid entry.
-- **Income/Expense Head Modals**: Quick-add modals for creating new dimension values.
-- **Table**: Scrollable table (min-width 1600px) with inline edit and delete actions per row.
+- balance_rows
+  - { _id, companyType: "main"|"gst", sNo, liability, liabilityAmount, asset, assetAmount, createdAt }
+
+- pnl_entries
+  - { _id, date, income, incomeAmount, expense, expenseAmount, createdAt }
+
+- gst_outward / gst_inward
+  - { _id, invoiceNo, invoiceDate, customerName, customerGSTIN, taxableValue, cgstAmt, sgstAmt, invoiceValue, placeOfSupply, inputCreditEligible, rawSheetHeaders: {...}, createdAt }
+
+- dimensions (dropdowns)
+  - { _id, name: "Income Head"|"Expense Head"|"Site Name", values: [{value, createdAt}] }
+
+- files (PDF metadata)
+  - { _id, type, url, filename, createdBy, createdAt, meta }
+
+
+> Tip: Use MongoDB validations and indexes for fields used in filters and sorting — e.g., date, siteId, transactionId, nature.
 
 ---
 
-### 3. Balance Sheet Module
+## 🛠️ API Design — Resource-Oriented (Examples)
 
-#### `gsbalance_sheet.gs` — Balance Sheet CRUD (Main Company)
-- **Named Range**: `RANGEBALANCESHEET`
-- **`sup_getRangeValsByName(name)`**: Reusable helper returning range metadata (range object, values, sheet reference, row, column).
-- **`sup_getBalanceSheet1()`**: Returns balance sheet rows as objects with `__row` property (absolute sheet row number for updates/deletes). Formats dates as `dd-MMM-yyyy`.
-- **`sup_addBalanceAsset1(obj)`**: Appends a new asset row mapped to sheet headers.
-- **`sup_updateBalanceByRow1(sheetRow, updatedObj)`**: Updates a specific row by absolute sheet row number. Validates row falls within named range.
-- **`sup_deleteBalanceByRow1(sheetRow)`**: Deletes a row by absolute sheet row number.
-- **`sup_exportBalancePdf1(rows, meta)`**: Generates PDF with columns: S.No, Liability (Credit), Liability Amount, Asset (Debit), Asset Amount. Saves to Drive and returns URL.
+Use consistent JSON responses and support pagination, filtering, and sorting.
 
-#### `balance_sheet.html` — Balance Sheet UI (Main Company)
-- **Summary Bar**: Displays "Balance Sheet As on [date]" with Total Liability and Total Asset KPIs.
-- **Table**: 6-column table (S.No, Liability Credit, Liability Amount, Asset Debit, Asset Amount, Action).
-- **New Asset Modal**: Add new asset category with amount.
-- **Inline Editing**: Edit Asset (Debit) and Asset Amount columns inline. Liability columns are read-only.
-- **Delete Confirmation Modal**: Two-step delete with confirmation dialog.
-- **Client-Side Filtering**: Search by All, Liability, or Asset. Date presets (1m/6m/1y/custom).
-- **PDF Export**: Exports filtered data to PDF via server.
+- Authentication
+  - POST /api/auth/google-login  — accept Google idToken, return app JWT
+  - GET /api/auth/me
 
----
+- Transactions
+  - GET /api/transactions?site=&from=&to=&page=&perPage=
+  - POST /api/transactions
+  - GET /api/transactions/:id
+  - PATCH /api/transactions/:id
+  - DELETE /api/transactions/:id
+  - POST /api/transactions/export/pdf
 
-### 4. GST Balance Sheet Module
+- Sites
+  - GET /api/sites
+  - POST /api/sites
+  - PATCH /api/sites/:id
+  - DELETE /api/sites/:id  (backend must block deletion if transactions exist)
 
-#### `gsgstbalance_sheet.gs` — Balance Sheet CRUD (GST Company)
-- **Named Range**: `RANGEGSTBALANCESHEET`
-- Identical structure to `gsbalance_sheet.gs` but operates on the GST company's data.
-- Functions: `sup_getBalanceSheet()`, `sup_addBalanceAsset()`, `sup_updateBalanceByRow()`, `sup_deleteBalanceByRow()`, `sup_exportBalancePdf()`.
+- Materials, Balance, PnL, GST modules follow the same CRUD + export patterns.
 
-#### `gst_balancesheet.html` — GST Balance Sheet UI
-- Identical layout and functionality to `balance_sheet.html` but calls the GST-specific server functions.
+Standard response shape:
 
----
+```json
+// success
+{ "status": "ok", "data": ..., "meta": { "total": 100, "page": 1, "perPage": 25 } }
 
-### 5. Profit & Loss Module
-
-#### `gspnl.gs` — P&L Data Reader (Main Company)
-- **Named Range**: `RANGEPROFITLOSS`
-- **`sup_pnl_getData1()`**: Reads P&L data, formats dates, handles zero/empty amounts by converting them to empty strings for clean UI display.
-- **`sup_pnl_exportPdf1(rows, meta)`**: Generates PDF with columns: Date, Income, Income Amount, Expense, Expense Amount. Includes summary totals header.
-
-#### `pnl.html` — Profit & Loss UI (Main Company)
-- **Summary Card**: Shows period label, Total Income, Total Expense, and Net Profit.
-- **Table**: 5-column layout (Date, Income, Income Amount, Expense, Expense Amount).
-- **Filters**: Search by All/Income/Expense, date presets (All/1m/6m/Custom).
-- **PDF Export**: Exports filtered view with summary totals.
-
----
-
-### 6. GST Profit & Loss Module
-
-#### `gsgstnl.gs` — P&L Data Reader (GST Company)
-- **Named Range**: `RANGEGSTPROFITLOSS`
-- Functions: `sup_pnl_getData()`, `sup_pnl_exportPdf()`.
-- Identical logic to `gspnl.gs` but reads from the GST company's named range.
-
-#### `gst_profit_loss.html` — GST P&L UI
-- Identical layout and functionality to `pnl.html` but calls GST-specific server functions.
-
----
-
-### 7. Sites Module
-
-#### `gssites.gs` — Sites CRUD & Transaction Integration
-- **`sup_site_getSites()`**: Reads all sites from the `Sites` sheet, returns headers + rows with formatted dates.
-- **`sup_site_generateUniqueId()`**: Generates unique Site IDs (`AC` + 5 random digits), checks for collisions against existing IDs (up to 2000 attempts).
-- **`sup_site_addSite(siteObj)`**: Adds a new site. Finds the next empty row by scanning Column B (to avoid ArrayFormula conflicts in Column A).
-- **`sup_site_updateSite(originalId, updatedObj)`**: Updates a site row identified by Site ID.
-- **`sup_site_deleteSite(siteId, siteName)`**: Validates against Transactions sheet before deletion — **prevents deletion if transactions exist for the site**. Returns error message "There are Transactions in this site" if blocked.
-- **`sup_site_getTransactionsForSite(siteName)`**: Fetches all transactions for a specific site (for drill-down popup).
-
-#### `sites.html` — Sites UI
-- **Features**: Site table with CRUD, search, pagination, and a site detail drill-down modal showing related transactions.
-- **Site Links**: Site names are clickable, opening a detail modal with filtered transactions for that site.
-- **Delete Protection**: Cannot delete a site that has existing transactions.
-
----
-
-### 8. Materials Module
-
-#### `gsmaterials.gs` — Materials CRUD (Simple)
-- **`sup_getMaterials()`**: Reads all materials from `Materials` sheet using `getDataRange()`.
-- **`sup_getSiteList()`**: Reads site names from `Sites` sheet for the site dropdown.
-- **`sup_addMaterial(obj)`**: Appends new material row with auto-incremented S.No.
-- **`sup_updateMaterial(rowIndex, obj)`**: Updates columns B–J for a given row.
-- **`sup_deleteMaterial(rowIndex)`**: Deletes a material row by sheet index.
-
-#### `gssample.gs` — Materials CRUD (Advanced/Alternative)
-- More robust version with additional features:
-- **`sup_mat_getMaterials()`**: Returns `{ headers, rows }` with full header information.
-- **`sup_mat_addMaterial(siteObj)`**: Finds next empty row by scanning a data column. Skips `S.No` column (handled by ArrayFormula). Converts `YYYY-MM-DD` date strings to Date objects.
-- **`sup_mat_updateMaterial(originalSNo, updatedObj)`**: Updates by S.No lookup.
-- **`sup_mat_deleteMaterial(sno)`**: Deletes by S.No lookup.
-- **`sup_mat_export(rows, type)`**: Exports materials to **CSV** (as Drive file) or **Excel** (creates a new Google Spreadsheet).
-
-#### `materials.html` — Materials UI
-- **Features**: Material table with CRUD, search (by Item Name, Site, Shop Name), inline editing, pagination.
-- **New Material Modal**: 9-field form (Date, Bill No, Item Name, Quantity, Rate, Amount, Site, Shop Name, Notes) with site datalist.
-- **Export**: CSV and Excel export buttons.
-
----
-
-### 9. GST-1R Outward Module
-
-#### `gsgst1r_outward` — GST-1R Outward CRUD
-- **Named Range**: `RANGEGST1OUTWARD`
-- **`sup_gst1r_getData()`**: Advanced data reader with:
-  - **Unicode normalization** (`NFKC`) for header matching.
-  - **Canonical key mapping**: Maps 17 expected canonical keys (Year, Invoice Month, Filing Month, Invoice No, Invoice Date, Customer Name, Customer GSTIN, Description, Taxable Value, CGST %, CGST Amt, SGST %, SGST Amt, Invoice Value, Place of Supply, Input Credit Eligible, Remarks) to actual sheet headers using normalized string matching.
-  - **Fallback partial matching**: Uses keyword scoring for fuzzy header matching.
-  - Both `getValues()` and `getDisplayValues()` are used for robust data extraction.
-- **`sup_gst1r_addInvoice(payload)`**: Appends new invoice row with canonical-to-sheet-header mapping. Detects last non-empty row via Invoice No column (Column D).
-- **`sup_gst1r_updateRow(sheetRowNumber, updates)`**: Updates specific cells by column map (D=4 through Q=17) to protect ArrayFormulas.
-- **`sup_gst1r_deleteRow(sheetRowNumber)`**: Deletes row with bounds checking.
-- **`sup_gst1r_exportPdf(rows, meta)`**: Generates GST-1 Outward PDF report with 8 key columns.
-
-#### `gst1r_outward.html` — GST-1R Outward UI
-- **Summary Card**: Displays period and totals (Taxable Value, CGST, SGST, Invoice Value).
-- **Table**: Scrollable table with all 17 GST fields, inline edit, and delete.
-- **Filters**: Search, date presets (1m/6m/1y/custom), PDF export.
-
----
-
-### 10. GST-2B Inward Module
-
-#### `gsgst2b.gs` — GST-2B Inward CRUD
-- **Named Range**: `RANGEGSTR2B`
-- **`sup_gst2b_getData()`**: Same robust canonical key mapping as GST-1R module. Maps 8 canonical keys (Taxable Value, CGST Amt, SGST Amt, Purchase Bill Value, Invoice Date, Purchase Bill No, Company Name, Description).
-- **`sup_gst2b_updateRow(sheetRowNumber, updates)`**: Updates only Column G (Description) and Column P (Input Credit Eligible) to protect ArrayFormulas in other columns.
-- **`sup_gst2b_deleteRow(sheetRowNumber)`**: Deletes row with bounds validation.
-- **`sup_gst2b_exportPdf(rows, meta)`**: Generates GST-2B PDF report with 8 columns and summary totals.
-
-#### `gst_2b.html` — GST-2B Inward UI
-- **Summary Card**: Period, Taxable Value, CGST, SGST, Purchase Bill Value totals.
-- **Table**: Full GST-2B data table with inline editing (restricted to Description and Input Credit fields), delete.
-- **Tabs**: Tab-based view switching.
-- **Filters**: Search (by Company Name or All), date presets, PDF export.
-
----
-
-## 📊 Google Sheets Structure (Named Ranges)
-
-The application relies heavily on **Named Ranges** in the Google Sheet for data access:
-
-| Named Range | Used By | Description |
-|---|---|---|
-| `DASHCUMPROFIT` | Dashboard | Cumulative profit data (Date, Cumulative Profit) |
-| `DASHSITEWISE` | Dashboard | Site-wise profit percentages (Site Name, Profit Percentage) |
-| `DASHHEADWISE` | Dashboard | Head-wise expenditure (Nature/Head, SUM of Amount) |
-| `RANGEBALANCESHEET` | Balance Sheet (Main) | Balance sheet data (S.No, Liability, Liability Amount, Asset, Asset Amount) |
-| `RANGEGSTBALANCESHEET` | Balance Sheet (GST) | GST balance sheet data |
-| `RANGEPROFITLOSS` | P&L (Main) | Profit/Loss data (Date, Income, Income Amount, Expense, Expense Amount) |
-| `RANGEGSTPROFITLOSS` | P&L (GST) | GST Profit/Loss data |
-| `RANGEGST1OUTWARD` | GST-1R Outward | Outward supply invoices (17 columns) |
-| `RANGEGSTR2B` | GST-2B Inward | Inward supply data (purchase bills) |
-
-### Sheet Names
-
-| Sheet Name | Purpose |
-|---|---|
-| `Dashboard` | KPI values in cells I3–I7 |
-| `Transactions` | All financial transactions |
-| `Dimensions` | Dropdown values (Site ID, Site Name, Income Head, Expense Head, etc.) |
-| `Sites` | Site/project master data |
-| `Materials` | Materials inventory records |
-| `GST-2B Inward` | GST-2B inward supply sheet |
-
----
-
-## 🎨 UI/UX Design
-
-### Design System
-- **Primary Color**: `#dca612` (Gold/Teal — used for buttons, active states, accents)
-- **Secondary Color**: `#f0d795` / `#fae5aa` (Light aqua — hover states, stat backgrounds)
-- **Dark Text**: `#23272b` / `#021640` (Dashboard)
-- **Muted Text**: `#8a8f98`
-- **Background**: `#f7fafb` / `#f5f7fa`
-- **Cards**: White with `box-shadow: 0 2px 6px rgba(0,0,0,0.1)` or `0 6px 18px rgba(8,14,18,0.04)`
-
-### Common UI Components
-All modules share a consistent design language:
-- **Processing Overlay**: Full-screen spinner overlay during server calls
-- **Modal Dialogs**: Centered modals with backdrop overlay for forms and confirmations
-- **Inline Editing**: Table rows switch to edit mode with input fields; save/cancel buttons replace action icons
-- **Pagination**: Top and bottom pagination with Prev/Next buttons and page indicators
-- **Search**: Criteria dropdown + search input + Search/Clear buttons
-- **Date Filters**: Preset selector (All/1m/6m/1y/Custom) with optional date range inputs
-- **Export PDF**: Server-side PDF generation saved to Google Drive
-
-### Responsive Design
-- **Breakpoint**: 992px (sidebar), 768px and 600px (content)
-- **Mobile**: Sidebar collapses into hamburger menu; tables get horizontal scroll; form grids collapse to single column; stat rows stack vertically
-
----
-
-## 🔧 Function Naming Conventions
-
-| Prefix | Scope | Example |
-|---|---|---|
-| `sup_` | Generic server-side helper | `sup_getSheetByName_()` |
-| `sup_site_` | Sites module server functions | `sup_site_getSites()` |
-| `sup_mat_` | Materials module (advanced) | `sup_mat_getMaterials()` |
-| `sup_pnl_` | P&L module | `sup_pnl_getData()` |
-| `sup_gst1r_` | GST-1R Outward module | `sup_gst1r_getData()` |
-| `sup_gst2b_` | GST-2B Inward module | `sup_gst2b_getData()` |
-| `dash` / `dashFmt*` | Dashboard client-side | `dashGetDashboardData()`, `dashFmtCurrency()` |
-| `supShow*` / `supHide*` | Client-side UI helpers | `supShowProcessing()`, `supHideModal()` |
-
----
-
-## 🔄 Data Flow (Typical CRUD Operation)
-
-```
-1. User clicks "New Transaction" → supOpenNewTx() → Modal opens
-2. User fills form → clicks "Save" → supSaveTransaction()
-3. Client validates fields → Constructs txObj
-4. google.script.run.sup_addTransaction(txObj) → Server call
-5. Server generates Transaction ID (TXNyyMMddHHmmss)
-6. Server finds next empty row in Transactions sheet
-7. Server writes row → returns { status: 'ok' }
-8. Client shows success alert → Resets Amount/Nature fields (bulk entry mode)
-9. On modal close → supLoadTransactions() → Server-side filter & paginate
-10. Client renders updated table
+// error
+{ "status": "error", "code": "INVALID_PAYLOAD", "message": "Amount must be > 0" }
 ```
 
 ---
 
-## 🔐 Security & Deployment Notes
+## 🔒 Auth, Security & Operational Items
 
-- Deployed as a Google Apps Script Web App
-- Access control managed through Google Apps Script deployment settings (Execute as: owner/user, Access: specific users/anyone)
-- Uses `HtmlService.XFrameOptionsMode.ALLOWALL` for iframe embedding
-- No external backend or database — all data lives in Google Sheets
-- PDF exports are saved to the script owner's Google Drive
-
----
-
-## 📦 External Dependencies (CDN)
-
-| Library | Version | Purpose |
-|---|---|---|
-| [jQuery](https://jquery.com/) | 3.7.1 | DOM manipulation, Select2 dependency |
-| [Select2](https://select2.org/) | 4.0.13 | Enhanced dropdown/searchable select boxes |
-| [ApexCharts](https://apexcharts.com/) | Latest | Dashboard charts (Area, Bar, Horizontal Bar) |
-| [Font Awesome](https://fontawesome.com/) | 6.x | Icons throughout the application |
-| [Google Fonts](https://fonts.google.com/) | — | Poppins, Roboto, Montserrat typefaces |
+- Validate Google idTokens server-side and issue short-lived JWTs for API calls.
+- Use service accounts and managed secret stores for Drive/Sheets access if needed.
+- Implement RBAC: admin / accountant / viewer.
+- Enforce HTTPS, enable rate-limiting, and audit all write operations.
+- Backups: rely on MongoDB Atlas snapshots; maintain export strategy for long-term archival.
+- Logging/Monitoring: Cloud Logging, structured logs, error reporting, and alerts.
 
 ---
 
-## 🚀 Deployment Instructions
+## 📦 PDF Generation & Storage
 
-1. **Create a Google Sheet** with the required sheet names and named ranges listed above.
-2. **Open Apps Script** from the Google Sheet (Extensions → Apps Script).
-3. **Create all `.gs` files** in the Apps Script editor with the corresponding code.
-4. **Create all `.html` files** in the Apps Script editor.
-5. **Deploy as Web App**:
-   - Click Deploy → New Deployment
-   - Select "Web app"
-   - Set "Execute as" to your account
-   - Set "Who has access" as needed
-   - Click Deploy
-6. **Access the app** via the generated Web App URL.
+- Use **Puppeteer** for faithful HTML → PDF rendering (best with Node backend).
+- Store PDFs in cloud storage (e.g., GCS, S3) or Google Drive via service account. Store metadata in `files` collection and return signed URLs for downloads.
+- For heavy use, offload PDF generation to an async job queue (RabbitMQ, Cloud Tasks, or managed pub/sub) to avoid blocking web requests.
 
 ---
 
-## 📝 Notes
+## 📈 Indexing & Performance
 
-- The application uses **two parallel sets** of Balance Sheet and P&L modules — one for the **Main** company and one for the **GST** company, allowing dual-entity accounting.
-- `gssample.gs` and `gsmaterials.gs` are two implementations of the materials module (advanced and simple respectively). The active one depends on which functions the HTML calls.
-- The GST modules (1R Outward and 2B Inward) include sophisticated **Unicode normalization** and **fuzzy header matching** to handle special characters (₹, %, non-breaking spaces) in sheet headers.
-- Transaction IDs are generated server-side (`TXN` + timestamp) to prevent client-side collisions.
-- The delete protection in the Sites module checks the Transactions sheet before allowing site deletion.
+- Add indexes for frequently filtered fields (date, siteId, transactionId, nature).
+- Use aggregation pipelines for dashboard metrics; if expensive, pre-compute and cache results.
+- Use cursor-based pagination for large datasets to avoid skip/limit performance issues.
 
 ---
 
-## 📄 License
+## 🧩 Migration Plan (Phased & Low-Risk)
 
-This is a proprietary internal application built for Amirtham Constructions. All rights reserved.
+1. **Audit** — Extract current Sheets (named ranges, formulas, headers). Export sample datasets.
+2. **Design** — Finalize DB schema, API contracts, and canonical header normalization logic.
+3. **Prototype** — Build backend read endpoints for one module (Transactions) + an Angular POC page to fetch and render data. Validate parity with Sheets.
+4. **Writes & Concurrency** — Implement create/update/delete endpoints, enforce ID generation server-side, and add server-side validations and delete-protection.
+5. **ETL & Reconciliation** — Migrate historical data from Sheets to Mongo via ETL scripts. Run reconciliation checks (totals, counts) for a rolling period.
+6. **Port UIs** — Incrementally rewrite pages to Angular (one module at a time). Keep the same payload shapes initially.
+7. **Exports** — Move PDF exports to Puppeteer/worker service and store generated files in cloud storage.
+8. **Cutover** — Make backend the single writer. Keep Sheets read-only (optional) during validation period.
+9. **Decommission / Archive** — Archive old Sheets or keep as read-only archive.
+
+---
+
+## 💰 Costs & Free-Tier Notes
+
+- MongoDB Atlas free tier is great for development but limited (storage, connections, backups). Plan to upgrade as data grows.
+- Puppeteer and server-side rendering incur CPU/memory costs—consider serverless (Cloud Run) or dedicated worker instances.
+- Monitor database I/O and set alerts to upgrade early if load increases.
+
+---
+
+## ✅ Next Actionable Steps I Can Help With
+
+Pick one and I’ll produce a focused deliverable:
+
+- 📄 Full REST API contract (endpoints, request/response examples, validation rules)
+- 🧱 Canonical MongoDB collection schemas (JSON + indexes)
+- ⚙️ Backend scaffold (Node.js + NestJS or Spring Boot starter)
+- 🛠️ ETL script to extract Sheets → JSON → Mongo (with normalization)
+- 🧭 Angular project scaffold (routes, modules, example Transactions page)
+
+Which deliverable would you like first? Reply with the letter (e.g., `A`) or describe a custom next step.
+
+---
+
+*Generated on 2026-03-27 — tailored migration guidance for AMC Business Management*
