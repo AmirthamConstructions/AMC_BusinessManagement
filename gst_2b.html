@@ -1,0 +1,675 @@
+<!-- gst2b.html -->
+<!DOCTYPE html>
+<html>
+<head>
+  <base target="_top">
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GST-2B Inward</title>
+
+  <!-- Fonts & Icons -->
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&family=Roboto:wght@300;400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+
+  <style>
+    :root {
+      --white: #ffffff;
+      --teal: #dca612;
+      --light-aqua: #fae5aa;
+      --light-black: #2e2e2e;
+      --muted: #7b8086;
+      --card-shadow: 0 2px 10px rgba(0,0,0,0.06);
+      --rounded: 10px;
+      --font-sans: 'Poppins', 'Roboto', sans-serif;
+    }
+    body { font-family: var(--font-sans); margin: 16px; background: #f6f9fa; color: var(--light-black); }
+    .top-row { display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:14px; }
+    .title-block h1 { margin:0; font-size:20px; }
+    .title-block p { margin:0; color:var(--muted); font-size:13px; }
+
+    .controls { display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+    .input, .select { padding:8px 10px; border-radius:6px; border:1px solid #ddd; font-size:13px; min-height:36px; }
+    .btn { background:var(--teal); color:#fff; padding:8px 12px; border-radius:6px; border:none; cursor:pointer; font-size:13px; }
+    .btn.ghost { background:transparent; border:1px solid var(--teal); color:var(--teal); }
+    .btn.small { padding:6px 8px; font-size:12px; }
+
+    .summary-card { background:var(--white); padding:14px; border-radius:var(--rounded); box-shadow:var(--card-shadow); margin-bottom:18px; display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap; }
+    .period { color:var(--muted); font-weight:600; font-size:13px; }
+    .stats { display:flex; gap:10px; }
+    .stat-item { background:var(--light-aqua); padding:10px 14px; border-radius:8px; min-width:150px; text-align:left; }
+    .stat-label { font-size:12px; color:var(--muted); text-transform:uppercase; }
+    .stat-val { font-size:18px; font-weight:600; margin-top:6px; }
+
+    .tabs { display:flex; gap:6px; margin-bottom:10px; }
+    .tab { padding:8px 12px; background:transparent; border-radius:8px; cursor:pointer; color:var(--muted); border:1px solid transparent; }
+    .tab.active { background:var(--teal); color:#fff; border-color:var(--teal); }
+
+    .table-card { background:var(--white); padding:12px; border-radius:var(--rounded); box-shadow:var(--card-shadow); overflow-x:auto; }
+    table { width:100%; border-collapse:collapse; min-width:1000px; }
+    th, td { padding:10px 8px; border-bottom:1px solid #f1f1f1; text-align:left; font-size:13px; }
+    th { text-align:center; font-weight:600; background:#fafafa; }
+    td.center { text-align:center; }
+    .num { text-align:right; white-space:nowrap; }
+
+    .pagination { display:flex; gap:6px; align-items:center; margin:8px 0; flex-wrap:wrap; }
+    .page-btn { padding:6px 8px; border-radius:6px; background:#f5f7f7; border:1px solid #eee; cursor:pointer; }
+    .page-btn.active { background:var(--teal); color:#fff; border-color:var(--teal); }
+
+    #supProcessing { position:fixed; inset:0; background:rgba(255,255,255,0.8); display:none; align-items:center; justify-content:center; z-index:9999; font-size:16px; }
+    #supProcessing i { margin-right:8px; }
+
+    /* Actions */
+    .row-actions button { margin-right:6px; }
+
+    @media (max-width:700px) {
+      .stats { flex-direction:column; gap:10px; }
+      .summary-card { flex-direction:column; align-items:flex-start; }
+    }
+  </style>
+</head>
+<body>
+
+  <div id="supProcessing"><i class="fa-solid fa-spinner fa-spin"></i> Processing...</div>
+
+  <!-- Top row: heading + controls -->
+  <div class="top-row">
+    <div class="title-block">
+      <h1>GST-2B Inward</h1>
+      <p>View your GST-2B details</p>
+    </div>
+
+    <div class="controls">
+      <select id="supSearchCrit" class="select">
+        <option value="All">All</option>
+        <option value="Company Name">Company Name</option>
+      </select>
+
+      <input id="supSearchInput" class="input" placeholder="Search... (e.g. company name)" />
+
+      <button id="supBtnSearch" class="btn ghost small"><i class="fa-solid fa-magnifying-glass"></i> Search</button>
+      <button id="supBtnClear" class="btn ghost small"><i class="fa-solid fa-ban"></i> Clear</button>
+
+      <select id="supDatePreset" class="select">
+        <option value="all">All Dates</option>
+        <option value="1m">Last 1 Month</option>
+        <option value="6m">Last 6 Months</option>
+        <option value="1y">Last 1 Year</option>
+        <option value="custom">Custom Range</option>
+      </select>
+
+      <input type="date" id="supFrom" class="input" style="display:none;" />
+      <input type="date" id="supTo" class="input" style="display:none;" />
+
+      <button id="supBtnPdf" class="btn"><i class="fa-solid fa-file-pdf"></i> Export PDF</button>
+    </div>
+  </div>
+
+  <!-- Summary -->
+  <div class="summary-card">
+    <div>
+      <div id="supPeriodLabel" class="period">GST-2B for the period ...</div>
+      <div style="margin-top:8px; color:var(--muted); font-size:12px;">Showing totals for selected range</div>
+    </div>
+
+    <div class="stats">
+      <div class="stat-item">
+        <div class="stat-label">Total Taxable Value</div>
+        <div id="supTaxableTotal" class="stat-val">Rs. 0.00</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-label">Total CGST</div>
+        <div id="supCgstTotal" class="stat-val">Rs. 0.00</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-label">Total SGST</div>
+        <div id="supSgstTotal" class="stat-val">Rs. 0.00</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-label">Total Purchase Value</div>
+        <div id="supPurchaseTotal" class="stat-val">Rs. 0.00</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tabs -->
+  <div class="tabs">
+    <div id="supTabAbstract" class="tab active">Abstract</div>
+    <div id="supTabDetailed" class="tab">Detailed</div>
+  </div>
+
+  <!-- Abstract Table (loaded) -->
+  <div id="supAbstractCard" class="table-card" style="display:block;">
+    <!-- Pagination (top) -->
+    <div class="pagination" id="supAbstractPagerTop"></div>
+
+    <div id="supAbstractTable">Loading...</div>
+
+    <!-- Pagination (bottom) -->
+    <div class="pagination" id="supAbstractPagerBottom"></div>
+  </div>
+
+  <!-- Detailed Table (loaded simultaneously but hidden) -->
+  <div id="supDetailedCard" class="table-card" style="display:none; margin-top:12px;">
+    <div class="pagination" id="supDetailedPagerTop"></div>
+    <div id="supDetailedTable">Loading...</div>
+    <div class="pagination" id="supDetailedPagerBottom"></div>
+  </div>
+
+<script>
+  // Master data arrays
+  var sup_masterData = []; // all rows from GS
+  var sup_filteredData = [];
+  var isEditingRow = false; // Added this line
+  var sup_currentTab = 'abstract';
+  var sup_rowsPerPage = 25;
+
+  $(document).ready(function(){
+    $('#supProcessing').css('display','flex');
+    sup_loadData();
+
+    $('#supBtnSearch').on('click', function(){ sup_applyFilters(); });
+    $('#supBtnClear').on('click', function(){
+      $('#supSearchInput').val('');
+      $('#supSearchCrit').val('All');
+      $('#supDatePreset').val('all').trigger('change');
+      $('#supFrom,#supTo').hide().val('');
+      sup_applyFilters();
+    });
+
+    $('#supDatePreset').on('change', function(){
+      if ($(this).val() === 'custom') { $('#supFrom,#supTo').show(); }
+      else { $('#supFrom,#supTo').hide().val(''); sup_applyFilters(); }
+    });
+
+    $('#supTabAbstract').on('click', function(){ sup_switchTab('abstract'); });
+    $('#supTabDetailed').on('click', function(){ sup_switchTab('detailed'); });
+
+    $('#supBtnPdf').on('click', function(){ sup_exportPdf(); });
+  });
+
+  // =========== Server calls ===========
+  function sup_loadData() {
+    $('#supProcessing').css('display','flex');
+    google.script.run.withSuccessHandler(function(res) {
+      $('#supProcessing').hide();
+      if (res.status === 'ok') {
+        sup_masterData = res.rows || [];
+        // ensure numeric fields are numbers where possible (robust to formatted strings like "1,234.56")
+function _sup_toNumberLoose(v) {
+  if (v === "" || v === null || typeof v === 'undefined') return "";
+  // remove commas and spaces, keep digits, dot and minus
+  var s = String(v).replace(/,/g, '').replace(/\s+/g, '');
+  var n = Number(s);
+  return isNaN(n) ? v : n;
+}
+
+sup_masterData.forEach(function(r){
+  r['Taxable Value (₹)(A)'] = _sup_toNumberLoose(r['Taxable Value (₹)(A)']);
+  r['CGST Amt (₹)(B)'] = _sup_toNumberLoose(r['CGST Amt (₹)(B)']);
+  r['SGST Amt (₹)(C)'] = _sup_toNumberLoose(r['SGST Amt (₹)(C)']);
+  r['Purchase Bill Value (A+B+C)'] = _sup_toNumberLoose(r['Purchase Bill Value (A+B+C)']);
+  // If Invoice Date was returned as a millis raw field, keep Invoice Date_raw (server already set it for Date)
+  // otherwise we leave Invoice Date as-is (display string).
+});
+
+        sup_applyFilters();
+      } else {
+        $('#supAbstractTable').html('<div style="color:red;">'+res.message+'</div>');
+        $('#supDetailedTable').html('<div style="color:red;">'+res.message+'</div>');
+      }
+    }).sup_gst2b_getData();
+  }
+
+  // =========== Filtering ===========
+  function sup_applyFilters() {
+    $('#supProcessing').css('display','flex');
+
+    // read filter criteria
+    var crit = $('#supSearchCrit').val();
+    var query = $('#supSearchInput').val().trim().toLowerCase();
+    var preset = $('#supDatePreset').val();
+    var fromDate = $('#supFrom').val();
+    var toDate = $('#supTo').val();
+
+    var now = new Date();
+    var startTime = 0;
+    if (preset === '1m') {
+      startTime = new Date(new Date().setMonth(now.getMonth() - 1)).getTime();
+    } else if (preset === '6m') {
+      startTime = new Date(new Date().setMonth(now.getMonth() - 6)).getTime();
+    } else if (preset === '1y') {
+      startTime = new Date(new Date().setFullYear(now.getFullYear() - 1)).getTime();
+    } else if (preset === 'custom') {
+      if (fromDate) startTime = new Date(fromDate).getTime();
+    }
+
+    var endTime = Number.MAX_SAFE_INTEGER;
+    if (preset === 'custom' && toDate) {
+      var d = new Date(toDate);
+      d.setHours(23,59,59,999);
+      endTime = d.getTime();
+    }
+
+    sup_filteredData = sup_masterData.filter(function(r){
+      // ignore empty rows - server already filtered but double check
+      if (!r['Purchase Bill No'] && !r['Invoice Date'] && !r['Company Name']) return false;
+
+      // search
+      var matchSearch = true;
+      if (query) {
+        if (crit === 'Company Name') {
+          matchSearch = (String(r['Company Name']||'').toLowerCase().indexOf(query) !== -1);
+        } else {
+          // All - search across visible fields (abstract) and all fields for detailed
+          matchSearch = JSON.stringify(r).toLowerCase().indexOf(query) !== -1;
+        }
+      }
+
+      // date
+      var matchDate = true;
+      if (startTime > 0 && r['Invoice Date_raw']) {
+        matchDate = (r['Invoice Date_raw'] >= startTime);
+        if (endTime && r['Invoice Date_raw']) {
+          matchDate = matchDate && (r['Invoice Date_raw'] <= endTime);
+        }
+      }
+
+      return matchSearch && matchDate;
+    });
+
+    sup_renderAll();
+    $('#supProcessing').hide();
+  }
+
+  // =========== Render (both tables) ===========
+  function sup_renderAll(){
+    sup_renderSummary();
+    sup_renderAbstract(1);
+    sup_renderDetailed(1);
+    sup_updatePeriodLabel();
+  }
+
+  function sup_formatNum(v) {
+    if (v === "" || v === null || typeof v === 'undefined') return '';
+    var n = Number(v) || 0;
+    return n.toFixed(2);
+  }
+
+  function sup_renderSummary() {
+  var sumTaxable = 0, sumCgst = 0, sumSgst = 0, sumPurchase = 0;
+  sup_filteredData.forEach(function(r){
+    sumTaxable += Number(r['Taxable Value (₹)(A)']) || 0;
+    sumCgst += Number(r['CGST Amt (₹)(B)']) || 0;
+    sumSgst += Number(r['SGST Amt (₹)(C)']) || 0;
+    sumPurchase += Number(r['Purchase Bill Value (A+B+C)']) || 0;
+  });
+
+  $('#supTaxableTotal').text('Rs. ' + sup_formatNum(sumTaxable));
+  $('#supCgstTotal').text('Rs. ' + sup_formatNum(sumCgst));
+  $('#supSgstTotal').text('Rs. ' + sup_formatNum(sumSgst));
+  $('#supPurchaseTotal').text('Rs. ' + sup_formatNum(sumPurchase));
+}
+
+
+  // ---------- Abstract table ----------
+  function sup_renderAbstract(page) {
+    var cols = [
+      'Purchase Bill No',
+      'Invoice Date',
+      'Company Name',
+      'Description of Goods / Services',
+      'Taxable Value (₹)(A)',
+      'CGST Amt (₹)(B)',
+      'SGST Amt (₹)(C)',
+      'Purchase Bill Value (A+B+C)'
+    ];
+
+    sup_renderTable({
+      data: sup_filteredData,
+      cols: cols,
+      containerId: 'supAbstractTable',
+      pagerTopId: 'supAbstractPagerTop',
+      pagerBottomId: 'supAbstractPagerBottom',
+      page: page,
+      rowsPerPage: sup_rowsPerPage,
+      showRowActions: false // per requirement: edit/update/cancel/delete for abstract table
+      
+    });
+  }
+
+  // ---------- Detailed table ----------
+  function sup_renderDetailed(page) {
+    var cols = [
+      'Year',
+      'Invoice Month',
+      'Purchase Bill No',
+      'Invoice Date',
+      'Company Name',
+      'Company GSTIN',
+      'Description of Goods / Services',
+      'Taxable Value (₹)(A)',
+      'CGST %',
+      'CGST Amt (₹)(B)',
+      'SGST %',
+      'SGST Amt (₹)(C)',
+      'Purchase Bill Value (A+B+C)',
+      'Place of Purchase',
+      'Input Credit Eligible (Yes/No)',
+      'Remarks'
+    ];
+
+    sup_renderTable({
+      data: sup_filteredData,
+      cols: cols,
+      containerId: 'supDetailedTable',
+      pagerTopId: 'supDetailedPagerTop',
+      pagerBottomId: 'supDetailedPagerBottom',
+      page: page,
+      rowsPerPage: sup_rowsPerPage,
+      showRowActions: true,
+      rowActionHandlerPrefix: 'supDetailed'
+    });
+  }
+
+  // Generic table renderer with pagination and optional row actions
+  function sup_renderTable(opts) {
+    var data = opts.data || [];
+    var cols = opts.cols || [];
+    var container = $('#' + opts.containerId);
+    var pagerTop = $('#' + opts.pagerTopId);
+    var pagerBottom = $('#' + opts.pagerBottomId);
+    var page = opts.page || 1;
+    var rpp = opts.rowsPerPage || 25;
+    var showActions = !!opts.showRowActions;
+    var handlerPrefix = opts.rowActionHandlerPrefix || '';
+
+    var totalRows = data.length;
+    var totalPages = Math.max(1, Math.ceil(totalRows / rpp));
+    if (page < 1) page = 1;
+    if (page > totalPages) page = totalPages;
+
+    // build headers
+    var html = '<table><thead><tr>';
+    html += '<th style="width:45px; text-align:center;">S.No</th>';
+    cols.forEach(function(h){ html += '<th>' + h + '</th>'; });
+    if (showActions) html += '<th>Actions</th>';
+    html += '</tr></thead><tbody>';
+
+    // page slice
+    var start = (page - 1) * rpp;
+    var end = Math.min(totalRows, start + rpp);
+    for (var i = start; i < end; i++) {
+      var row = data[i];
+      html += '<tr data-sheet-row="'+(row._row||'')+'">';
+      // Render the dynamic S.No
+    html += '<td style="text-align:center;">' + (i + 1) + '</td>';
+      cols.forEach(function(h){
+  var val = row[h] === undefined ? '' : row[h];
+  // center align invoice date, numeric fields right aligned
+  var cls = '';
+  if (h === 'Invoice Date') cls = 'center';
+  if (h.indexOf('Value') !== -1 || h.indexOf('Amt') !== -1 || h.indexOf('%') !== -1) cls = 'num';
+
+  // Format Purchase Bill Value to 2 decimals (both abstract & detailed)
+  if (h === 'Purchase Bill Value (A+B+C)') {
+    if (val === "" || val === null || typeof val === 'undefined') {
+      html += '<td class="'+cls+'"></td>';
+    } else {
+      // attempt to coerce to number, else show as-is
+      var num = Number(String(val).replace(/[^0-9.-]+/g, ''));
+      if (!isNaN(num)) html += '<td class="'+cls+'">' + sup_formatNum(num) + '</td>';
+      else html += '<td class="'+cls+'">' + val + '</td>';
+    }
+  } else {
+    // keep existing display for other columns
+    html += '<td class="'+cls+'">'+(val===null? '': val) + '</td>';
+  }
+});
+
+
+      if (showActions) {
+        // include edit/update/cancel/delete buttons
+        html += '<td class="row-actions">';
+        html += '<button class="page-btn small" onclick="'+handlerPrefix+'EditRow(' + i + ')"><i class="fa-solid fa-pen-to-square"></i> Edit</button>';
+        html += '<button class="page-btn small" onclick="'+handlerPrefix+'UpdateRow(' + i + ')" style="display:none;" id="'+handlerPrefix+'Update_'+i+'"><i class="fa-solid fa-floppy-disk"></i> Update</button>';
+        html += '<button class="page-btn small" onclick="'+handlerPrefix+'CancelEdit(' + i + ')" style="display:none;" id="'+handlerPrefix+'Cancel_'+i+'"><i class="fa-solid fa-xmark"></i> Cancel</button>';
+        html += '<button class="page-btn small" onclick="'+handlerPrefix+'DeleteRow(' + i + ')"><i class="fa-solid fa-trash"></i> Delete</button>';
+        html += '</td>';
+      }
+
+      html += '</tr>';
+    }
+
+    if (start >= end) {
+      html += '<tr><td colspan="'+(cols.length + (showActions?1:0))+'" style="text-align:center; padding:20px;">No matching records found</td></tr>';
+    }
+
+    html += '</tbody></table>';
+    container.html(html);
+
+    // build pagers
+    function buildPager(pagerElem) {
+      pagerElem.empty();
+      if (totalPages <= 1) return;
+      // prev
+      var prev = $('<div class="page-btn">Prev</div>').on('click', function(){ if(page>1){ if (opts.containerId==='supAbstractTable') sup_renderAbstract(page-1); else sup_renderDetailed(page-1);} });
+      pagerElem.append(prev);
+      // pages (show limited)
+      var startP = Math.max(1, page-2), endP = Math.min(totalPages, page+2);
+      for (var p = startP; p <= endP; p++) {
+        var b = $('<div class="page-btn '+(p===page?'active':'')+'">'+p+'</div>').on('click', (function(pp){ return function(){ if (opts.containerId==='supAbstractTable') sup_renderAbstract(pp); else sup_renderDetailed(pp); }; })(p));
+        pagerElem.append(b);
+      }
+      var next = $('<div class="page-btn">Next</div>').on('click', function(){ if(page<totalPages){ if (opts.containerId==='supAbstractTable') sup_renderAbstract(page+1); else sup_renderDetailed(page+1);} });
+      pagerElem.append(next);
+      // show rows count
+      pagerElem.append('<div style="margin-left:8px; color:var(--muted);">Showing ' + (totalRows>0? (start+1) + '-' + end : '0') + ' of ' + totalRows + '</div>');
+    }
+
+    buildPager(pagerTop);
+    buildPager(pagerBottom);
+  }
+
+  // =========== Row action handlers for Abstract table ===========
+  // We use index in sup_filteredData (global) to find row; supFilteredData is current filtered array --
+  // note: index will change if filters or pagination change. To reliably operate on sheet row, we use the stored _row property.
+  // Add these new handlers to the <script> section
+function supDetailedEditRow(idx) {
+  var rowObj = sup_filteredData[idx];
+  var $tr = $('#supDetailedTable').find('tr[data-sheet-row="'+rowObj._row+'"]');
+  
+  // Requirement: Only Columns G and P are editable
+  var indices = [7, 15]; 
+
+  indices.forEach(function(i) {
+    var cell = $tr.find('td').eq(i);
+    var val = cell.text().trim();
+    cell.html('<input type="text" class="input" style="width:90%;" value="'+val+'"/>');
+  });
+
+  $tr.find('.row-actions button').hide();
+  $('#supDetailedUpdate_' + idx).show();
+  $('#supDetailedCancel_' + idx).show();
+}
+
+function supDetailedUpdateRow(idx) {
+  var rowObj = sup_filteredData[idx];
+  var $tr = $('#supDetailedTable').find('tr[data-sheet-row="'+rowObj._row+'"]');
+  var inputs = $tr.find('input');
+
+  var updates = {
+    'Description of Goods / Services': inputs.eq(0).val(),
+    'Input Credit Eligible (Yes/No)': inputs.eq(1).val()
+  };
+
+  $('#supProcessing').show();
+  google.script.run.withSuccessHandler(function(res){
+    $('#supProcessing').hide();
+    if (res.status === 'ok') {
+      isEditingRow = false; // Reset flag
+      sup_loadData(); // Refresh data
+    } else {
+      alert(res.message);
+    }
+  }).sup_gst2b_updateRow(rowObj._row, updates);
+}
+
+function supDetailedCancelEdit(idx) {
+  isEditingRow = false; // Reset flag
+  sup_renderDetailed(); // Re-render table to clear inputs
+}
+
+// Expose to window object
+window.supDetailedEditRow = supDetailedEditRow;
+window.supDetailedUpdateRow = supDetailedUpdateRow;
+window.supDetailedCancelEdit = supDetailedCancelEdit;
+
+
+  function supAbstractEditRow(idx) {
+    // turn row cells into editable inputs for certain editable columns: (we'll allow editing Remarks and Description and Place of Purchase)
+    var rowObj = sup_filteredData[idx];
+    if (!rowObj) return alert('Row not available for edit.');
+
+    // find the table row element that has this sheet-row
+    var sheetRow = rowObj._row;
+    var $tr = $('#supAbstractTable').find('tr[data-sheet-row="'+sheetRow+'"]');
+    if ($tr.length === 0) return alert('Row element not in current page. Navigate to the page containing that row.');
+
+    // allowed editable fields in abstract: Description of Goods / Services, Remarks, Place of Purchase (if present in data)
+    $tr.find('td').each(function(ci){
+      // map the column index to the abstract columns defined earlier
+      // 0: Purchase Bill No (no edit)
+      // 1: Invoice Date (no edit)
+      // 2: Company Name (no edit)
+      // 3: Description of Goods / Services (editable)
+      // 4: Taxable Value (no)
+      // 5: CGST Amt (no)
+      // 6: SGST Amt (no)
+      // 7: Purchase Bill Value (no)
+      if (ci === 3) {
+        var cur = $(this).text();
+        $(this).html('<input type="text" style="width:100%;" value="'+cur.replace(/"/g,'&quot;')+'"/>');
+      }
+    });
+
+    // show update/cancel, hide edit
+    var rowIdxAll = sup_filteredData.indexOf(rowObj); // fallback
+    $('[onclick="supAbstractEditRow('+rowIdxAll+')"]').hide();
+    $('#supAbstractUpdate_'+rowIdxAll).show();
+    $('#supAbstractCancel_'+rowIdxAll).show();
+  }
+
+  function supAbstractCancelEdit(idx) {
+    // reload page to revert
+    sup_renderAll();
+  }
+
+  function supAbstractUpdateRow(idx) {
+    var rowObj = sup_filteredData[idx];
+    if (!rowObj) return alert('Row not available.');
+
+    var sheetRow = rowObj._row;
+    var $tr = $('#supAbstractTable').find('tr[data-sheet-row="'+sheetRow+'"]');
+    if ($tr.length === 0) return alert('Row element not in current page.');
+
+    // read edited values
+    var newDescription = $tr.find('td').eq(3).find('input').val();
+
+    // Build update payload - we'll update the 'Description of Goods / Services' column only (safe approach)
+    var updates = { 'Description of Goods / Services': newDescription };
+
+    $('#supProcessing').css('display','flex');
+    google.script.run.withSuccessHandler(function(res){
+      $('#supProcessing').hide();
+      if (res.status === 'ok') {
+        // refresh data
+        sup_loadData();
+      } else {
+        alert('Update failed: ' + res.message);
+      }
+    }).sup_gst2b_updateRow(sheetRow, updates);
+  }
+
+  function supAbstractDeleteRow(idx) {
+    var rowObj = sup_filteredData[idx];
+    if (!rowObj) return alert('Row not available.');
+
+    if (!confirm('Delete this row from sheet? This action cannot be undone.')) return;
+    var sheetRow = rowObj._row;
+    $('#supProcessing').css('display','flex');
+    google.script.run.withSuccessHandler(function(res){
+      $('#supProcessing').hide();
+      if (res.status === 'ok') {
+        sup_loadData();
+      } else {
+        alert('Delete failed: ' + res.message);
+      }
+    }).sup_gst2b_deleteRow(sheetRow);
+  }
+
+  // Expose functions with exact names used in HTML buttons
+  window.supAbstractEditRow = supAbstractEditRow;
+  window.supAbstractUpdateRow = supAbstractUpdateRow;
+  window.supAbstractCancelEdit = supAbstractCancelEdit;
+  window.supAbstractDeleteRow = supAbstractDeleteRow;
+
+  // =========== Tabs ===========
+  function sup_switchTab(t) {
+    sup_currentTab = t;
+    if (t === 'abstract') {
+      $('#supTabAbstract').addClass('active');
+      $('#supTabDetailed').removeClass('active');
+      $('#supAbstractCard').show();
+      $('#supDetailedCard').hide();
+    } else {
+      $('#supTabDetailed').addClass('active');
+      $('#supTabAbstract').removeClass('active');
+      $('#supAbstractCard').hide();
+      $('#supDetailedCard').show();
+    }
+  }
+
+  // =========== Period label logic ===========
+  function sup_updatePeriodLabel() {
+    var preset = $('#supDatePreset').val();
+    var label = '';
+    if (preset === 'custom') {
+      var f = $('#supFrom').val() || 'Start';
+      var t = $('#supTo').val() || (new Date()).toLocaleDateString();
+      label = 'GST-2B for the period ' + f + ' to ' + t;
+    } else {
+      if (sup_filteredData.length > 0) {
+        var temp = sup_filteredData.slice().sort(function(a,b){ return (a['Invoice Date_raw']||0) - (b['Invoice Date_raw']||0); });
+        var earliest = temp[0]['Invoice Date'] || '';
+        var today = new Date();
+        var todayStr = today.getDate() + '-' + today.toLocaleString('default', { month: 'short' }) + '-' + today.getFullYear();
+        label = 'GST-2B for the period ' + earliest + ' to ' + todayStr;
+      } else {
+        label = 'No data found for this period';
+      }
+    }
+    $('#supPeriodLabel').text(label);
+  }
+
+  // =========== Export PDF ===========
+  function sup_exportPdf() {
+    var meta = {
+      dateRange: $('#supPeriodLabel').text(),
+      totals: {
+        taxable: $('#supTaxableTotal').text(),
+        cgst: $('#supCgstTotal').text(),
+        sgst: $('#supSgstTotal').text(),
+        purchase: $('#supPurchaseTotal').text()
+      }
+    };
+    $('#supProcessing').css('display','flex');
+    google.script.run.withSuccessHandler(function(url){
+      $('#supProcessing').hide();
+      if (url) window.open(url, '_blank');
+    }).sup_gst2b_exportPdf(sup_filteredData, meta);
+  }
+
+</script>
+</body>
+</html>
