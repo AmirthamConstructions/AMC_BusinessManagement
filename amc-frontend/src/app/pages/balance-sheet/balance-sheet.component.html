@@ -1,0 +1,63 @@
+<div class="page-header">
+  <h2>Balance Sheet</h2>
+  <button mat-raised-button color="primary"><mat-icon>add</mat-icon> Add Entry</button>
+</div>
+
+<div class="tab-buttons">
+  <button mat-flat-button [color]="selectedTab === 'main' ? 'primary' : ''" (click)="onTabChange('main')">Main Company</button>
+  <button mat-flat-button [color]="selectedTab === 'gst' ? 'primary' : ''" (click)="onTabChange('gst')">GST Company</button>
+</div>
+
+<!-- Summary Cards -->
+<div class="summary-row">
+  <mat-card class="summary-card">
+    <mat-card-content>
+      <span class="summary-label">Total Liabilities</span>
+      <span class="summary-value liability">₹{{ totals.totalLiability | number }}</span>
+    </mat-card-content>
+  </mat-card>
+  <mat-card class="summary-card">
+    <mat-card-content>
+      <span class="summary-label">Total Assets</span>
+      <span class="summary-value asset">₹{{ totals.totalAsset | number }}</span>
+    </mat-card-content>
+  </mat-card>
+</div>
+
+<mat-card>
+  <mat-card-content>
+    <div class="table-responsive">
+      <table mat-table [dataSource]="rows" class="full-width">
+        <ng-container matColumnDef="sNo">
+          <th mat-header-cell *matHeaderCellDef>#</th>
+          <td mat-cell *matCellDef="let row">{{ row.sNo }}</td>
+        </ng-container>
+        <ng-container matColumnDef="liability">
+          <th mat-header-cell *matHeaderCellDef>Liability</th>
+          <td mat-cell *matCellDef="let row">{{ row.liability }}</td>
+        </ng-container>
+        <ng-container matColumnDef="liabilityAmount">
+          <th mat-header-cell *matHeaderCellDef>Amount (₹)</th>
+          <td mat-cell *matCellDef="let row" class="amount">₹{{ row.liabilityAmount | number }}</td>
+        </ng-container>
+        <ng-container matColumnDef="asset">
+          <th mat-header-cell *matHeaderCellDef>Asset</th>
+          <td mat-cell *matCellDef="let row">{{ row.asset }}</td>
+        </ng-container>
+        <ng-container matColumnDef="assetAmount">
+          <th mat-header-cell *matHeaderCellDef>Amount (₹)</th>
+          <td mat-cell *matCellDef="let row" class="amount">₹{{ row.assetAmount | number }}</td>
+        </ng-container>
+        <ng-container matColumnDef="actions">
+          <th mat-header-cell *matHeaderCellDef>Actions</th>
+          <td mat-cell *matCellDef="let row">
+            <button mat-icon-button color="primary" matTooltip="Edit"><mat-icon>edit</mat-icon></button>
+            <button mat-icon-button color="warn" matTooltip="Delete" (click)="deleteRow(row.id)"><mat-icon>delete</mat-icon></button>
+          </td>
+        </ng-container>
+        <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+        <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+      </table>
+    </div>
+  </mat-card-content>
+</mat-card>

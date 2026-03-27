@@ -1,0 +1,79 @@
+.page-header {
+  margin-bottom: 20px;
+  h2 { margin: 0; font-weight: 500; }
+}
+
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.kpi-card {
+  border-left: 4px solid;
+  mat-card-content {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 16px !important;
+  }
+  &.revenue { border-color: #4caf50; .kpi-icon { color: #4caf50; } }
+  &.expenditure { border-color: #f44336; .kpi-icon { color: #f44336; } }
+  &.profit { border-color: #2196f3; .kpi-icon { color: #2196f3; } }
+  &.company-exp { border-color: #ff9800; .kpi-icon { color: #ff9800; } }
+  &.net-profit { border-color: #9c27b0; .kpi-icon { color: #9c27b0; } }
+}
+
+.kpi-icon { mat-icon { font-size: 36px; width: 36px; height: 36px; } }
+.kpi-info { display: flex; flex-direction: column; }
+.kpi-label { font-size: 13px; color: #666; }
+.kpi-value { font-size: 22px; font-weight: 600; }
+
+.charts-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+  gap: 16px;
+}
+
+.chart-card { min-height: 280px; }
+
+.chart-placeholder { padding: 12px 0; }
+
+// Simple CSS bar chart
+.bar-chart {
+  display: flex;
+  align-items: flex-end;
+  gap: 6px;
+  height: 180px;
+}
+.bar {
+  flex: 1;
+  background: #3f51b5;
+  border-radius: 3px 3px 0 0;
+  min-width: 16px;
+  cursor: pointer;
+  transition: background 0.2s;
+  &:hover { background: #1a237e; }
+}
+.bar-labels {
+  display: flex;
+  gap: 6px;
+  margin-top: 4px;
+  span { flex: 1; text-align: center; font-size: 10px; color: #888; }
+}
+
+// Horizontal bars
+.horizontal-bars { display: flex; flex-direction: column; gap: 12px; padding: 8px 0; }
+.h-bar-row { display: flex; align-items: center; gap: 8px; }
+.h-bar-label { width: 120px; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.h-bar-track { flex: 1; height: 20px; background: #e0e0e0; border-radius: 10px; overflow: hidden; }
+.h-bar-fill { height: 100%; background: #3f51b5; border-radius: 10px; transition: width 0.6s ease; }
+.h-bar-fill.exp { background: #ff5722; }
+.h-bar-value { width: 90px; text-align: right; font-size: 13px; font-weight: 500; }
+
+@media (max-width: 599px) {
+  .kpi-value { font-size: 18px; }
+  .h-bar-label { width: 80px; font-size: 11px; }
+  .h-bar-value { width: 70px; font-size: 11px; }
+}

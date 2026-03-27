@@ -1,0 +1,61 @@
+.toolbar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 1000;
+}
+
+.brand {
+  margin-left: 8px;
+  font-size: 18px;
+  font-weight: 500;
+}
+
+.spacer {
+  flex: 1;
+}
+
+.user-name {
+  margin-right: 8px;
+  font-size: 14px;
+  display: none;
+  @media (min-width: 600px) {
+    display: inline;
+  }
+}
+
+.sidenav-container {
+  position: absolute;
+  top: 64px;
+  bottom: 0;
+  left: 0;
+  right: 0;
+
+  @media (max-width: 599px) {
+    top: 56px;
+  }
+}
+
+.sidenav {
+  width: 240px;
+}
+
+.active-link {
+  background-color: rgba(63, 81, 181, 0.12) !important;
+  color: #3f51b5 !important;
+}
+
+.content {
+  background: #fafafa;
+}
+
+.page-content {
+  padding: 24px;
+  max-width: 1400px;
+  margin: 0 auto;
+
+  @media (max-width: 599px) {
+    padding: 12px;
+  }
+}

@@ -1,0 +1,9 @@
+.page-header { margin-bottom: 16px; h2 { margin: 0; } }
+.dim-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 16px; }
+.dim-card { mat-card-content { padding-top: 8px; } }
+.chip-list {
+  display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px;
+  mat-chip-row { font-size: 13px; }
+}
+.add-row { display: flex; align-items: center; gap: 8px; }
+.add-field { flex: 1; }

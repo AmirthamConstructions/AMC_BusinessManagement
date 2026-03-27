@@ -1,0 +1,68 @@
+<div class="page-header">
+  <h2>Profit & Loss</h2>
+  <button mat-raised-button color="primary"><mat-icon>add</mat-icon> Add Entry</button>
+</div>
+
+<div class="tab-buttons">
+  <button mat-flat-button [color]="selectedTab === 'main' ? 'primary' : ''" (click)="onTabChange('main')">Main Company</button>
+  <button mat-flat-button [color]="selectedTab === 'gst' ? 'primary' : ''" (click)="onTabChange('gst')">GST Company</button>
+</div>
+
+<div class="summary-row">
+  <mat-card class="summary-card">
+    <mat-card-content>
+      <span class="summary-label">Total Income</span>
+      <span class="summary-value income">₹{{ totals.totalIncome | number }}</span>
+    </mat-card-content>
+  </mat-card>
+  <mat-card class="summary-card">
+    <mat-card-content>
+      <span class="summary-label">Total Expense</span>
+      <span class="summary-value expense">₹{{ totals.totalExpense | number }}</span>
+    </mat-card-content>
+  </mat-card>
+  <mat-card class="summary-card">
+    <mat-card-content>
+      <span class="summary-label">Net Profit</span>
+      <span class="summary-value profit">₹{{ totals.netProfit | number }}</span>
+    </mat-card-content>
+  </mat-card>
+</div>
+
+<mat-card>
+  <mat-card-content>
+    <div class="table-responsive">
+      <table mat-table [dataSource]="rows" class="full-width">
+        <ng-container matColumnDef="date">
+          <th mat-header-cell *matHeaderCellDef>Date</th>
+          <td mat-cell *matCellDef="let row">{{ row.date }}</td>
+        </ng-container>
+        <ng-container matColumnDef="income">
+          <th mat-header-cell *matHeaderCellDef>Income</th>
+          <td mat-cell *matCellDef="let row">{{ row.income || '—' }}</td>
+        </ng-container>
+        <ng-container matColumnDef="incomeAmount">
+          <th mat-header-cell *matHeaderCellDef>Amount (₹)</th>
+          <td mat-cell *matCellDef="let row" class="amount income-amt">{{ row.incomeAmount ? '₹' + (row.incomeAmount | number) : '—' }}</td>
+        </ng-container>
+        <ng-container matColumnDef="expense">
+          <th mat-header-cell *matHeaderCellDef>Expense</th>
+          <td mat-cell *matCellDef="let row">{{ row.expense || '—' }}</td>
+        </ng-container>
+        <ng-container matColumnDef="expenseAmount">
+          <th mat-header-cell *matHeaderCellDef>Amount (₹)</th>
+          <td mat-cell *matCellDef="let row" class="amount expense-amt">{{ row.expenseAmount ? '₹' + (row.expenseAmount | number) : '—' }}</td>
+        </ng-container>
+        <ng-container matColumnDef="actions">
+          <th mat-header-cell *matHeaderCellDef>Actions</th>
+          <td mat-cell *matCellDef="let row">
+            <button mat-icon-button color="primary" matTooltip="Edit"><mat-icon>edit</mat-icon></button>
+            <button mat-icon-button color="warn" matTooltip="Delete" (click)="deleteRow(row.id)"><mat-icon>delete</mat-icon></button>
+          </td>
+        </ng-container>
+        <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+        <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+      </table>
+    </div>
+  </mat-card-content>
+</mat-card>

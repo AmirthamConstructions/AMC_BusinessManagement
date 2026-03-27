@@ -1,0 +1,61 @@
+<div class="page-header">
+  <h2>GST-1R Outward (Sales)</h2>
+  <button mat-raised-button color="primary"><mat-icon>add</mat-icon> Add Invoice</button>
+</div>
+
+<mat-card>
+  <mat-card-content>
+    <mat-form-field appearance="outline" class="search-field">
+      <mat-label>Search invoices</mat-label>
+      <input matInput [(ngModel)]="searchText" (keyup)="applyFilter()">
+      <mat-icon matSuffix>search</mat-icon>
+    </mat-form-field>
+
+    <div class="table-responsive">
+      <table mat-table [dataSource]="dataSource" class="full-width">
+        <ng-container matColumnDef="invoiceDate">
+          <th mat-header-cell *matHeaderCellDef>Date</th>
+          <td mat-cell *matCellDef="let row">{{ row.invoiceDate }}</td>
+        </ng-container>
+        <ng-container matColumnDef="invoiceNo">
+          <th mat-header-cell *matHeaderCellDef>Invoice No</th>
+          <td mat-cell *matCellDef="let row" class="mono">{{ row.invoiceNo }}</td>
+        </ng-container>
+        <ng-container matColumnDef="customerName">
+          <th mat-header-cell *matHeaderCellDef>Customer</th>
+          <td mat-cell *matCellDef="let row">{{ row.customerName }}</td>
+        </ng-container>
+        <ng-container matColumnDef="description">
+          <th mat-header-cell *matHeaderCellDef>Description</th>
+          <td mat-cell *matCellDef="let row">{{ row.description }}</td>
+        </ng-container>
+        <ng-container matColumnDef="taxableValue">
+          <th mat-header-cell *matHeaderCellDef>Taxable</th>
+          <td mat-cell *matCellDef="let row" class="amount">₹{{ row.taxableValue | number }}</td>
+        </ng-container>
+        <ng-container matColumnDef="cgstAmount">
+          <th mat-header-cell *matHeaderCellDef>CGST</th>
+          <td mat-cell *matCellDef="let row" class="amount">₹{{ row.cgstAmount | number }}</td>
+        </ng-container>
+        <ng-container matColumnDef="sgstAmount">
+          <th mat-header-cell *matHeaderCellDef>SGST</th>
+          <td mat-cell *matCellDef="let row" class="amount">₹{{ row.sgstAmount | number }}</td>
+        </ng-container>
+        <ng-container matColumnDef="invoiceValue">
+          <th mat-header-cell *matHeaderCellDef>Total</th>
+          <td mat-cell *matCellDef="let row" class="amount total">₹{{ row.invoiceValue | number }}</td>
+        </ng-container>
+        <ng-container matColumnDef="actions">
+          <th mat-header-cell *matHeaderCellDef>Actions</th>
+          <td mat-cell *matCellDef="let row">
+            <button mat-icon-button color="primary" matTooltip="Edit"><mat-icon>edit</mat-icon></button>
+            <button mat-icon-button color="warn" matTooltip="Delete" (click)="deleteRow(row.id)"><mat-icon>delete</mat-icon></button>
+          </td>
+        </ng-container>
+        <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+        <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+      </table>
+    </div>
+    <mat-paginator [pageSizeOptions]="[10, 25]" showFirstLastButtons></mat-paginator>
+  </mat-card-content>
+</mat-card>

@@ -1,0 +1,25 @@
+@use '@angular/material' as mat;
+
+/* You can add global styles to this file, and also import other style files */
+
+html, body { height: 100%; }
+body { margin: 0; font-family: Roboto, "Helvetica Neue", sans-serif; background: #fafafa; }
+
+// Responsive table helper
+.table-responsive {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+// Consistent card spacing
+mat-card { border-radius: 8px !important; }
+
+// Global scrollbar styling
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-thumb { background: #ccc; border-radius: 3px; }
+
+// Mobile-first font sizes
+@media (max-width: 599px) {
+  h2 { font-size: 20px !important; }
+  .mat-mdc-header-cell, .mat-mdc-cell { font-size: 12px !important; padding: 8px 6px !important; }
+}

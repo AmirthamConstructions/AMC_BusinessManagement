@@ -1,0 +1,7 @@
+.page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 12px; h2 { margin: 0; } }
+.search-field { width: 100%; max-width: 400px; }
+.table-responsive { overflow-x: auto; }
+.full-width { width: 100%; }
+.mono { font-family: monospace; font-size: 12px; }
+.amount { font-weight: 600; white-space: nowrap; }
+.total { color: #c62828; }

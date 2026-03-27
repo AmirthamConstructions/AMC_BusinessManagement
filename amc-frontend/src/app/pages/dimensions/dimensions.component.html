@@ -1,0 +1,33 @@
+<div class="page-header">
+  <h2>Dimensions (Master Data)</h2>
+</div>
+
+<div class="dim-grid">
+  @for (dim of dimensions; track dim.id) {
+    <mat-card class="dim-card">
+      <mat-card-header>
+        <mat-card-title>{{ dim.name }}</mat-card-title>
+        <mat-card-subtitle>{{ dim.values.length }} values</mat-card-subtitle>
+      </mat-card-header>
+      <mat-card-content>
+        <div class="chip-list">
+          @for (val of dim.values; track val) {
+            <mat-chip-row (removed)="removeValue(dim.name, val)">
+              {{ val }}
+              <button matChipRemove><mat-icon>cancel</mat-icon></button>
+            </mat-chip-row>
+          }
+        </div>
+        <div class="add-row">
+          <mat-form-field appearance="outline" class="add-field">
+            <mat-label>New value</mat-label>
+            <input matInput [(ngModel)]="newValues[dim.name]" (keyup.enter)="addValue(dim.name)">
+          </mat-form-field>
+          <button mat-mini-fab color="primary" (click)="addValue(dim.name)" matTooltip="Add">
+            <mat-icon>add</mat-icon>
+          </button>
+        </div>
+      </mat-card-content>
+    </mat-card>
+  }
+</div>

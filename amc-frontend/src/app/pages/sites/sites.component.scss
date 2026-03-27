@@ -1,0 +1,10 @@
+.page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 12px; h2 { margin: 0; } }
+.search-field { width: 100%; max-width: 400px; }
+.table-responsive { overflow-x: auto; }
+.full-width { width: 100%; }
+.mono { font-family: monospace; }
+.status-chip {
+  padding: 3px 10px; border-radius: 12px; font-size: 12px; font-weight: 500;
+  &.active { background: #e8f5e9; color: #2e7d32; }
+  &.inactive { background: #fafafa; color: #999; }
+}

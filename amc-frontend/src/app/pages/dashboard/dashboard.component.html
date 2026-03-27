@@ -1,0 +1,113 @@
+<div class="page-header">
+  <h2>Dashboard</h2>
+</div>
+
+<!-- KPI Cards -->
+<div class="kpi-grid">
+  <mat-card class="kpi-card revenue">
+    <mat-card-content>
+      <div class="kpi-icon"><mat-icon>arrow_downward</mat-icon></div>
+      <div class="kpi-info">
+        <span class="kpi-label">Total Revenue</span>
+        <span class="kpi-value">{{ formatCurrency(data.kpis.revenue) }}</span>
+      </div>
+    </mat-card-content>
+  </mat-card>
+
+  <mat-card class="kpi-card expenditure">
+    <mat-card-content>
+      <div class="kpi-icon"><mat-icon>arrow_upward</mat-icon></div>
+      <div class="kpi-info">
+        <span class="kpi-label">Total Expenditure</span>
+        <span class="kpi-value">{{ formatCurrency(data.kpis.expenditure) }}</span>
+      </div>
+    </mat-card-content>
+  </mat-card>
+
+  <mat-card class="kpi-card profit">
+    <mat-card-content>
+      <div class="kpi-icon"><mat-icon>trending_up</mat-icon></div>
+      <div class="kpi-info">
+        <span class="kpi-label">Total Profit</span>
+        <span class="kpi-value">{{ formatCurrency(data.kpis.totalProfit) }}</span>
+      </div>
+    </mat-card-content>
+  </mat-card>
+
+  <mat-card class="kpi-card company-exp">
+    <mat-card-content>
+      <div class="kpi-icon"><mat-icon>business</mat-icon></div>
+      <div class="kpi-info">
+        <span class="kpi-label">Company Expenses</span>
+        <span class="kpi-value">{{ formatCurrency(data.kpis.companyExpenses) }}</span>
+      </div>
+    </mat-card-content>
+  </mat-card>
+
+  <mat-card class="kpi-card net-profit">
+    <mat-card-content>
+      <div class="kpi-icon"><mat-icon>emoji_events</mat-icon></div>
+      <div class="kpi-info">
+        <span class="kpi-label">Net Profit</span>
+        <span class="kpi-value">{{ formatCurrency(data.kpis.netProfit) }}</span>
+      </div>
+    </mat-card-content>
+  </mat-card>
+</div>
+
+<!-- Chart Placeholders -->
+<div class="charts-grid">
+  <mat-card class="chart-card">
+    <mat-card-header><mat-card-title>{{ data.chart1.title }}</mat-card-title></mat-card-header>
+    <mat-card-content>
+      <div class="chart-placeholder">
+        <div class="bar-chart">
+          @for (val of data.chart1.values; track $index) {
+            <div class="bar" [style.height.%]="(val / 1700000) * 100"
+              [matTooltip]="formatCurrency(val)">
+            </div>
+          }
+        </div>
+        <div class="bar-labels">
+          @for (label of data.chart1.dates; track $index) {
+            <span>{{ label.substring(0, 3) }}</span>
+          }
+        </div>
+      </div>
+    </mat-card-content>
+  </mat-card>
+
+  <mat-card class="chart-card">
+    <mat-card-header><mat-card-title>{{ data.chart2.title }}</mat-card-title></mat-card-header>
+    <mat-card-content>
+      <div class="horizontal-bars">
+        @for (cat of data.chart2.categories; track $index) {
+          <div class="h-bar-row">
+            <span class="h-bar-label">{{ cat }}</span>
+            <div class="h-bar-track">
+              <div class="h-bar-fill" [style.width.%]="data.chart2.values[$index]"></div>
+            </div>
+            <span class="h-bar-value">{{ data.chart2.values[$index] }}%</span>
+          </div>
+        }
+      </div>
+    </mat-card-content>
+  </mat-card>
+
+  <mat-card class="chart-card">
+    <mat-card-header><mat-card-title>{{ data.chart3.title }}</mat-card-title></mat-card-header>
+    <mat-card-content>
+      <div class="horizontal-bars">
+        @for (cat of data.chart3.categories; track $index) {
+          <div class="h-bar-row">
+            <span class="h-bar-label">{{ cat }}</span>
+            <div class="h-bar-track">
+              <div class="h-bar-fill exp" [style.width.%]="(data.chart3.values[$index] / 920000) * 100"></div>
+            </div>
+            <span class="h-bar-value">{{ formatCurrency(data.chart3.values[$index]) }}</span>
+          </div>
+        }
+      </div>
+    </mat-card-content>
+  </mat-card>
+</div>

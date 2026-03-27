@@ -1,0 +1,14 @@
+.page-header {
+  display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 12px;
+  h2 { margin: 0; font-weight: 500; }
+}
+.search-field { width: 100%; max-width: 400px; }
+.table-responsive { overflow-x: auto; }
+.full-width { width: 100%; }
+.txn-id { font-family: monospace; font-size: 12px; color: #666; }
+.amount-cell { font-weight: 600; white-space: nowrap; }
+.type-chip {
+  padding: 3px 10px; border-radius: 12px; font-size: 12px; font-weight: 500;
+  &.chip-credit { background: #e8f5e9; color: #2e7d32; }
+  &.chip-debit { background: #ffebee; color: #c62828; }
+}
