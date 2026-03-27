@@ -1,0 +1,272 @@
+// gsgst1r_outward.gs
+// Server-side code for GST-1 Outward module (functions prefixed with sup_gst1r_)
+
+/**
+ * Robust reader for RANGEGST1OUTWARD.
+ * Returns {status:'ok', rows: [ { headerKey: value, ... , _row: sheetRow, Invoice Date_raw: ms } ] }
+ * Uses both getValues() and getDisplayValues(), normalizes headers and maps canonical keys so client always sees expected names.
+ */
+function sup_gst1r_getData() {
+  try {
+    var ss = SpreadsheetApp.getActiveSpreadsheet();
+    var range = ss.getRangeByName("RANGEGST1OUTWARD");
+    if (!range) return { status: 'error', message: 'Named Range "RANGEGST1OUTWARD" not found.' };
+
+    var values = range.getValues();
+    var displays = range.getDisplayValues();
+    if (values.length <= 1) return { status: 'ok', rows: [] };
+
+    var rawHeaders = values[0].map(function(h){ return String(h||''); });
+
+    function _normKey(s) {
+      if (s === null || typeof s === 'undefined') return '';
+      var t = String(s).normalize('NFKC').replace(/\u00A0/g,' ').replace(/[\u200B-\u200F]/g,'');
+      t = t.replace(/[^0-9a-zA-Z\s]/g, '');
+      t = t.replace(/\s+/g,' ').trim().toLowerCase();
+      return t;
+    }
+
+    // canonical keys expected by client
+    var canonicalKeys = [
+      'Year','Invoice Month','Filing Month','Invoice No','Invoice Date','Customer Name','Customer GSTIN',
+      'Description of Goods / Services','Taxable Value (₹)(A)','CGST %','CGST Amt (₹)(B)','SGST %','SGST Amt (₹)(C)',
+      'Invoice Value (A+B+C)','Place of Supply','Input Credit Eligible (Yes/No)','Remarks'
+    ];
+
+    var normToSheet = {};
+    for (var i=0;i<rawHeaders.length;i++){
+      normToSheet[_normKey(rawHeaders[i])] = rawHeaders[i];
+    }
+
+    var canonicalToSheetHeader = {};
+    canonicalKeys.forEach(function(cKey){
+      var n = _normKey(cKey);
+      if (normToSheet[n]) { canonicalToSheetHeader[cKey] = normToSheet[n]; return; }
+      // fallback: partial matching
+      var parts = n.split(' ');
+      for (var nh in normToSheet) {
+        var score = 0;
+        for (var pi=0; pi<parts.length; pi++){
+          if (parts[pi].length < 3) continue;
+          if (nh.indexOf(parts[pi]) !== -1) score++;
+        }
+        if (score >= Math.max(1, Math.floor(parts.length/3))) {
+          canonicalToSheetHeader[cKey] = normToSheet[nh];
+          break;
+        }
+      }
+    });
+
+    var rows = [];
+    var tz = Session.getScriptTimeZone();
+    var startRow = range.getRow();
+
+    for (var r=1; r<values.length; r++){
+      var rowVals = values[r];
+      var displayVals = displays[r];
+
+      var isEmpty = true;
+      for (var c=0;c<displayVals.length;c++){
+        if (String(displayVals[c]).trim() !== "") { isEmpty = false; break; }
+      }
+      if (isEmpty) continue;
+
+      var obj = {};
+      for (var c=0;c<rawHeaders.length;c++){
+        var h = rawHeaders[c];
+        var raw = rowVals[c];
+        var shown = displayVals[c];
+        if (raw instanceof Date) {
+          obj[h] = Utilities.formatDate(raw, tz, 'dd-MMM-yyyy');
+          obj[h + '_raw'] = raw.getTime();
+        } else if (typeof raw === 'number') {
+          obj[h] = raw;
+        } else if (String(shown).trim() !== '') {
+          obj[h] = shown;
+        } else {
+          obj[h] = raw === null ? '' : raw;
+        }
+      }
+
+      // map canonical keys too (so front-end finds exact names)
+      canonicalKeys.forEach(function(cKey){
+        var sheetH = canonicalToSheetHeader[cKey];
+        if (sheetH && (typeof obj[sheetH] !== 'undefined')) {
+          obj[cKey] = obj[sheetH];
+          if (sheetH + '_raw' in obj) obj[cKey + '_raw'] = obj[sheetH + '_raw'];
+        } else {
+          // second-chance: search by token
+          for (var j=0;j<rawHeaders.length;j++){
+            if (_normKey(rawHeaders[j]).indexOf(_normKey(cKey).split(' ')[0]) !== -1) {
+              obj[cKey] = obj[rawHeaders[j]];
+              if (rawHeaders[j] + '_raw' in obj) obj[cKey + '_raw'] = obj[rawHeaders[j] + '_raw'];
+              break;
+            }
+          }
+        }
+      });
+
+      obj._row = startRow + r;
+      rows.push(obj);
+    }
+
+    return { status: 'ok', rows: rows };
+  } catch (e) {
+    return { status: 'error', message: e.toString() };
+  }
+}
+
+
+/**
+ * Append a new invoice row to the GST-1 Outward named range (uses headers order from named range).
+ * payload is an object mapping canonical header -> value (client passes canonical names).
+ */
+function sup_gst1r_addInvoice(payload) {
+  try {
+    var ss = SpreadsheetApp.getActiveSpreadsheet();
+    var rr = ss.getRangeByName("RANGEGST1OUTWARD");
+    if (!rr) return { status: 'error', message: 'Named Range "RANGEGST1OUTWARD" not found.' };
+
+    var sheet = rr.getSheet();
+    var headers = rr.getValues()[0].map(function(h){ return String(h||'').trim(); });
+
+    var row = [];
+    for (var i=0;i<headers.length;i++){
+      var key = headers[i];
+      if (payload.hasOwnProperty(key)) row.push(payload[key]);
+      else {
+        var norm = String(key).normalize('NFKC')
+          .replace(/\u00A0/g,' ')
+          .replace(/[\u200B-\u200F]/g,'')
+          .replace(/[^0-9a-zA-Z\s]/g,'')
+          .replace(/\s+/g,' ')
+          .trim()
+          .toLowerCase();
+
+        var found = false;
+        for (var p in payload) {
+          var pn = String(p).normalize('NFKC')
+            .replace(/\u00A0/g,' ')
+            .replace(/[\u200B-\u200F]/g,'')
+            .replace(/[^0-9a-zA-Z\s]/g,'')
+            .replace(/\s+/g,' ')
+            .trim()
+            .toLowerCase();
+
+          if (pn === norm) {
+            row.push(payload[p]);
+            found = true;
+            break;
+          }
+        }
+        if (!found) row.push('');
+      }
+    }
+
+    // Detect last non-empty row using Invoice No column (column D)
+    var col = 4;
+    var lastRow = sheet.getRange(sheet.getMaxRows(), col)
+                       .getNextDataCell(SpreadsheetApp.Direction.UP)
+                       .getRow();
+
+    var targetRow = lastRow + 1;
+
+    // write row
+    sheet.getRange(targetRow, rr.getColumn(), 1, row.length).setValues([row]);
+
+    return { status: 'ok', row: targetRow };
+
+  } catch (e) {
+    return { status: 'error', message: e.toString() };
+  }
+}
+
+
+// gsgst1r_outward.gs
+
+function sup_gst1r_updateRow(sheetRowNumber, updates) {
+  try {
+    var ss = SpreadsheetApp.getActiveSpreadsheet();
+    var range = ss.getRangeByName("RANGEGST1OUTWARD");
+    var sheet = range.getSheet();
+    
+    // Exact mapping of header name to Column Number in Sheet
+    // D=4, E=5, F=6, G=7, H=8, I=9, O=15, P=16, Q=17
+    var colMap = {
+      'Invoice No': 4,
+      'Invoice Date': 5,
+      'Customer Name': 6,
+      'Customer GSTIN': 7,
+      'Description of Goods / Services': 8,
+      'Taxable Value (₹)(A)': 9,
+      'Place of Supply': 15,
+      'Input Credit Eligible (Yes/No)': 16,
+      'Remarks': 17
+    };
+
+    for (var key in updates) {
+      if (colMap[key]) {
+        // Update ONLY the specific cell to protect ArrayFormulas
+        sheet.getRange(sheetRowNumber, colMap[key]).setValue(updates[key]);
+      }
+    }
+    return { status: 'ok' };
+  } catch (e) {
+    return { status: 'error', message: e.toString() };
+  }
+}
+/**
+ * Delete a row by absolute sheet row number (after checking it falls inside named range)
+ */
+function sup_gst1r_deleteRow(sheetRowNumber) {
+  try {
+    if (!sheetRowNumber) return { status: 'error', message: 'Invalid row number.' };
+    var ss = SpreadsheetApp.getActiveSpreadsheet();
+    var range = ss.getRangeByName("RANGEGST1OUTWARD");
+    if (!range) return { status: 'error', message: 'Named Range not found.' };
+    var sheet = range.getSheet();
+    var startRow = range.getRow();
+    var endRow = startRow + range.getNumRows() - 1;
+    if (sheetRowNumber < startRow || sheetRowNumber > endRow) return { status: 'error', message: 'Row outside named range bounds.' };
+    sheet.deleteRow(sheetRowNumber);
+    return { status: 'ok' };
+  } catch (e) {
+    return { status: 'error', message: e.toString() };
+  }
+}
+
+
+/**
+ * Export filtered rows + meta to PDF similar to GST-2B export
+ */
+function sup_gst1r_exportPdf(rows, meta) {
+  try {
+    if (!rows || rows.length === 0) return null;
+    var headers = ['Invoice No','Invoice Date','Customer Name','Description of Goods / Services',
+                   'Taxable Value (₹)(A)','CGST Amt (₹)(B)','SGST Amt (₹)(C)','Invoice Value (A+B+C)'];
+    var html = '<html><head><meta charset="utf-8"><style>body{font-family:Arial;font-size:12px;}h2{margin:0 0 6px;}table{width:100%;border-collapse:collapse}th,td{border:1px solid #777;padding:6px;text-align:left;font-size:11px;}th{background:#f0f0f0}.num{text-align:right}</style></head><body>';
+    html += '<h2>GST-1 Outward</h2><div><b>Period:</b> ' + (meta.dateRange||'') + '</div>';
+    html += '<div style="margin:8px 0;"><b>Totals:</b> ' + (meta.totals ? (meta.totals.taxable||'') + ' | ' + (meta.totals.cgst||'') + ' | ' + (meta.totals.sgst||'') + ' | ' + (meta.totals.invoice||'') : '') + '</div>';
+    html += '<table><thead><tr>' + headers.map(function(h){ return '<th>'+h+'</th>'; }).join('') + '</tr></thead><tbody>';
+
+    rows.forEach(function(r){
+      html += '<tr>' +
+        '<td>'+(r['Invoice No']||'')+'</td>' +
+        '<td>'+(r['Invoice Date']||'')+'</td>' +
+        '<td>'+(r['Customer Name']||'')+'</td>' +
+        '<td>'+(r['Description of Goods / Services']||'')+'</td>' +
+        '<td class="num">'+(r['Taxable Value (₹)(A)']||'')+'</td>' +
+        '<td class="num">'+(r['CGST Amt (₹)(B)']||'')+'</td>' +
+        '<td class="num">'+(r['SGST Amt (₹)(C)']||'')+'</td>' +
+        '<td class="num">'+(r['Invoice Value (A+B+C)']||'')+'</td>' +
+        '</tr>';
+    });
+
+    html += '</tbody></table></body></html>';
+    var blob = HtmlService.createHtmlOutput(html).getBlob().getAs('application/pdf').setName('GST1_Outward_Report.pdf');
+    var file = DriveApp.createFile(blob);
+    return file.getUrl();
+  } catch (e) {
+    return null;
+  }
+}

@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <base target="_top">
+  <meta charset="utf-8">
+
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&family=Roboto:wght@300;400;500&family=Montserrat:wght@600;700&display=swap" rel="stylesheet">
+
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
+  <style>
+    :root {
+      --sidebar-width: 260px;
+      --teal: #dca612;
+      --aqua: #f0d795;
+      --dark: #23272b;
+      --muted: #8a8f98;
+      --bg: #f7fafb;
+      --white: #ffffff;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: Poppins, Roboto, Montserrat, sans-serif;
+      background: var(--bg);
+      color: var(--dark);
+    }
+
+    .app {
+      display: flex;
+      min-height: 100vh;
+    }
+
+    /* ================= SIDEBAR ================= */
+    .sidebar {
+      width: var(--sidebar-width);
+      background: var(--white);
+      border-right: 1px solid #e6e9eb;
+      padding: 18px;
+      position: fixed;
+      top: 0;
+      bottom: 0;
+      left: 0;
+      z-index: 1000;
+      transition: transform 0.3s ease;
+    }
+
+    .sidebar .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 18px;
+    }
+    /* ===== SIDEBAR VERTICAL SCROLL FIX ===== */
+    .sidebar{
+      overflow-y: auto;              /* enable vertical scroll */
+      scrollbar-width: thin;         /* Firefox */
+      scrollbar-color: var(--teal) #f1f1f1;
+    }
+
+    /* Chrome / Edge / Safari scrollbar */
+    .sidebar::-webkit-scrollbar{
+      width: 6px;
+    }
+
+    .sidebar::-webkit-scrollbar-track{
+      background: #f1f1f1;
+    }
+
+    .sidebar::-webkit-scrollbar-thumb{
+      background-color: var(--teal);
+      border-radius: 6px;
+    }
+
+    .logo {
+      width: 44px;
+      height: 44px;
+      background: var(--teal);
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      font-weight: 700;
+      font-size: 18px;
+    }
+
+    .nav {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .nav-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 12px;
+      border-radius: 8px;
+      text-decoration: none;
+      color: var(--dark);
+      font-weight: 500;
+    }
+
+    .nav-item:hover {
+      background: var(--aqua);
+    }
+
+    .nav-item.active {
+      background: linear-gradient(90deg, rgba(220,166,18,.15), rgba(220,166,18,.05));
+      border-left: 3px solid var(--teal);
+      padding-left: 9px;
+    }
+
+    /* ================= MAIN ================= */
+    .main {
+      margin-left: var(--sidebar-width);
+      width: calc(100% - var(--sidebar-width));
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .topbar {
+      height: 64px;
+      border-bottom: 1px solid #eceff1;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 20px;
+      background: #fff;
+    }
+
+    .hamburger {
+      display: none;
+      font-size: 20px;
+      cursor: pointer;
+    }
+
+    .content {
+      padding: 20px;
+      flex: 1;
+      overflow-y: auto;
+    }
+
+    /* ================= OVERLAY ================= */
+    .overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.35);
+      z-index: 900;
+      display: none;
+    }
+
+    /* ================= MOBILE ================= */
+    @media (max-width: 992px) {
+
+      .sidebar {
+        transform: translateX(-100%);
+      }
+
+      .sidebar.open {
+        transform: translateX(0);
+      }
+
+      .main {
+        margin-left: 0;
+        width: 100%;
+      }
+
+      .hamburger {
+        display: block;
+      }
+
+      .overlay.show {
+        display: block;
+      }
+    }
+  </style>
+</head>
+
+<body>
+<div class="app">
+
+  <!-- OVERLAY -->
+  <div class="overlay" id="overlay"></div>
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar" id="sidebar">
+    <div class="brand">
+      <div class="logo">AC</div>
+      <div>
+        <strong>Amirtham Constructions</strong><br>
+        <small class="muted">Accounts System</small>
+      </div>
+    </div>
+
+    <nav class="nav">
+      <a href="<?= getScriptUrl() ?>?page=dashboard" class="nav-item <?= currentPage==='dashboard'?'active':'' ?>"><i class="fa-solid fa-gauge"></i> Dashboard</a>
+      <a href="<?= getScriptUrl() ?>?page=transactions" class="nav-item <?= currentPage==='transactions'?'active':'' ?>"><i class="fa-solid fa-book"></i> Transactions</a>
+      <a href="<?= getScriptUrl() ?>?page=balance_sheet" class="nav-item <?= currentPage==='balance_sheet'?'active':'' ?>"><i class="fa-solid fa-scale-balanced"></i> Balance Sheet</a>
+      <a href="<?= getScriptUrl() ?>?page=profit_loss" class="nav-item <?= currentPage==='profit_loss'?'active':'' ?>"><i class="fa-solid fa-chart-line"></i> Profit / Loss</a>
+      <a href="<?= getScriptUrl() ?>?page=sites" class="nav-item <?= currentPage==='sites'?'active':'' ?>"><i class="fa-solid fa-building"></i> Sites</a>
+      <a href="<?= getScriptUrl() ?>?page=gst_balancesheet" class="nav-item <?= currentPage==='gst_balancesheet'?'active':'' ?>"><i class="fa-solid fa-file-invoice"></i> GST Balance Sheet</a>
+      <a href="<?= getScriptUrl() ?>?page=gst_profit_loss" class="nav-item <?= currentPage==='gst_profit_loss'?'active':'' ?>"><i class="fa-solid fa-file-lines"></i> GST Profit / Loss</a>
+      <a href="<?= getScriptUrl() ?>?page=gst1r_outward" class="nav-item <?= currentPage==='gst1r_outward'?'active':'' ?>"><i class="fa-solid fa-arrow-right"></i> GST 1R Outward</a>
+      <a href="<?= getScriptUrl() ?>?page=gst_2b" class="nav-item <?= currentPage==='gst_2b'?'active':'' ?>"><i class="fa-solid fa-list-check"></i> GST 2B</a>
+      <a href="<?= getScriptUrl() ?>?page=materials" class="nav-item <?= currentPage==='materials'?'active':'' ?>"><i class="fa-solid fa-file-pdf"></i> Materials</a>
+    </nav>
+  </aside>
+
+  <!-- MAIN -->
+  <div class="main">
+    <header class="topbar">
+      <i class="fa-solid fa-bars hamburger" id="hamburger"></i>
+      <strong><?= currentPage.replace('_',' ').toUpperCase() ?></strong>
+      <i class="fa-solid fa-user"></i>
+    </header>
+
+    <main class="content">
+      <?!= include(contentTemplate) ?>
+    </main>
+  </div>
+</div>
+
+<script>
+  const sidebar = document.getElementById('sidebar');
+  const overlay = document.getElementById('overlay');
+  const hamburger = document.getElementById('hamburger');
+
+  function openSidebar() {
+    sidebar.classList.add('open');
+    overlay.classList.add('show');
+  }
+
+  function closeSidebar() {
+    sidebar.classList.remove('open');
+    overlay.classList.remove('show');
+  }
+
+  hamburger.addEventListener('click', openSidebar);
+  overlay.addEventListener('click', closeSidebar);
+</script>
+
+</body>
+</html>

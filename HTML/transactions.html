@@ -1,0 +1,884 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <base target="_top">
+  <meta charset="utf-8">
+  <title>Transactions</title>
+
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&family=Roboto:wght@300;400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/css/select2.min.css" rel="stylesheet" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/js/select2.min.js"></script>
+
+  <style>
+    :root { --teal:#dca612; --muted:#8a8f98; }
+    body { font-family: Poppins, Roboto, sans-serif; margin:0; padding:16px; background:#f7fafb; color:#23272b; }
+    .top-row { display:flex; justify-content:space-between; align-items:flex-start; gap:12px; flex-wrap:wrap; margin-bottom:12px; }
+    .heading h1 { margin:0; font-size:20px; }
+    .controls { display:flex; gap:10px; align-items:center; }
+    .btn { background:var(--teal); color:#fff; padding:8px 12px; border-radius:8px; border:none; cursor:pointer; font-weight:600; }
+    .btn.ghost { background:transparent; color:var(--teal); border:1px solid rgba(15,181,163,0.12); }
+    .select, .input { padding:8px 10px; border-radius:8px; border:1px solid #e7ecec; background:#fff; }
+    .card { background:#fff; border-radius:10px; padding:12px; box-shadow: 0 6px 18px rgba(8,14,18,0.04); }
+    table { width:100%; border-collapse:collapse; font-size:13px; }
+    table th, table td { padding:8px 10px; border-bottom:1px solid #f1f4f4; text-align:left; vertical-align:middle; }
+    .action-btn { border:none; background:transparent; cursor:pointer; margin-right:6px; font-size:14px; color:var(--teal); }
+    .sup-modal { position:fixed; left:50%; top:50%; transform:translate(-50%,-50%); background:#fff; padding:18px; width:720px; max-width:95%; border-radius:10px; display:none; z-index:2100;box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+  border: 1px solid #ddd; }
+    .small { font-size:13px; color:var(--muted); }
+    .pagination { display:flex; gap:6px; align-items:center; margin-top:8px; }
+    .page-btn { padding:6px 10px; border-radius:6px; border:1px solid #eef2f3; background:#fff; cursor:pointer; }
+    #supProcessing { position:fixed; inset:0; background:rgba(0,0,0,0.35); display:none; align-items:center; justify-content:center; z-index:3000; }
+    #supProcessing .box { background:#fff; padding:16px 20px; border-radius:8px; display:flex; gap:10px; align-items:center; }
+    .editable-input { width:100%; padding:6px; border-radius:6px; border:1px solid #dfe6e6; box-sizing:border-box; }
+    .action-buttons-row { display:flex; gap:8px; align-items:center; }
+    .tx-table-scroll { width: 100%; overflow-x: auto;}
+    tr.editing { background: #f0fbfa; }
+    tr.editing td { border-bottom: 1px solid #cceeee; }
+    .tx-table-scroll table { min-width: 1600px; }
+    .field-error { color: #d32f2f; font-size: 12px; margin-top: 4px; }
+    .input-error { border: 1px solid #d32f2f !important; background: #fff5f5; }
+    @media (max-width: 600px) {
+      .controls { flex-wrap: wrap; }
+      .controls > * { flex: 1 1 auto; min-width: 120px; }
+      .control-right { display: flex; flex-wrap: wrap; gap: 6px; }
+    }
+  </style>
+</head>
+<body>
+<div id="supModalOverlay" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); backdrop-filter:blur(2px); z-index:2000;"></div>
+  <div class="top-row">
+    <div class="heading">
+      <h1>Transactions</h1>
+      <p class="small">Add and manage your transactions</p>
+    </div>
+
+    <div class="controls">
+      <button class="btn" id="supBtnNewTx"><i class="fa-solid fa-plus"></i> New Transaction</button>
+      <button class="btn" id="supBtnNewIncome"><i class="fa-solid fa-circle-plus"></i> New Income Head</button>
+      <button class="btn" id="supBtnNewExpense"><i class="fa-solid fa-circle-plus"></i> New Expense Head</button>
+
+      <div class="control-right" style="margin-left:12px;">
+        <select id="supSearchCriteria" class="select">
+          <option value="All">All</option>
+          <option value="Site Name">Site Name</option>
+          <option value="Nature(Head)">Nature(Head)</option>
+          <option value="Type (D/C)">Type D/C</option>
+        </select>
+
+        <input id="supSearchQuery" class="input" placeholder="Search..." />
+        <button class="btn ghost" id="supBtnSearch">Search</button>
+        <button class="btn ghost" id="supBtnClear">Clear</button>
+   
+        <button class="btn ghost" id="supBtnExportPdf">
+          <i class="fa-solid fa-file-pdf"></i> Export PDF
+        </button>
+
+        <select id="supDatePreset" class="select">
+          <option value="all">All</option>
+          <option value="1m">Last 1 Month</option>
+          <option value="6m">Last 6 Months</option>
+          <option value="1y">Last 1 Year</option>
+          <option value="custom">Custom Range</option>
+        </select>
+
+        <input type="date" id="supFromDate" class="input" disabled>
+        <input type="date" id="supToDate" class="input" disabled>
+
+        <button class="btn ghost" id="supBtnClearDate">Clear Date</button>
+
+      </div>
+    </div>
+  </div>
+
+  <div class="card" id="supCardList">
+    <div class="pagination" id="supPaginationTop"></div>
+    <div id="supTableContainer">Loading transactions...</div>
+    <div class="pagination" id="supPagination"></div>
+  </div>
+
+  <div class="sup-modal" id="supModalIncome">
+    <h3>New Income Head</h3>
+    <label>Income Head Name <span class="small" style="color:red">*</span></label>
+    <input type="text" id="supIncomeName" placeholder="Income Head Name" />
+    <div style="margin-top:12px; text-align:right;">
+      <button class="btn ghost" id="supIncomeClose">Close</button>
+      <button class="btn" id="supIncomeSave">Save</button>
+    </div>
+  </div>
+
+  <div class="sup-modal" id="supModalExpense">
+    <h3>New Expense Head</h3>
+    <label>Expense Head Name <span class="small" style="color:red">*</span></label>
+    <input type="text" id="supExpenseName" placeholder="Expense Head Name" />
+    <div style="margin-top:12px; text-align:right;">
+      <button class="btn ghost" id="supExpenseClose">Close</button>
+      <button class="btn" id="supExpenseSave">Save</button>
+    </div>
+  </div>
+
+  <div class="sup-modal" id="supModalTx" style="width:600px;">
+    <h3>Add New Transaction</h3>
+
+    <div style="display:flex; gap:8px; margin-top:8px;">
+      <div style="flex:1; display:none;"> 
+        <label>Transaction ID</label>
+        <input type="text" id="supTxId" readonly class="input"/>
+      </div>
+      <div style="flex:1;">
+        <label>Date<span class="small" style="color:red">*</span></label>
+        <input type="date" id="supTxDate" class="input"/>
+      </div>
+      <div style="flex:1;">
+        <label>Company<span class="small" style="color:red">*</span></label>
+        <select id="supTxCompany" class="input">
+          <option value="Main">Main</option>
+          <option value="GST">GST</option>
+        </select>
+      </div>
+    </div>
+
+    <div style="display:flex; gap:8px; margin-top:8px;">
+      <div style="flex:1;">
+        <label>Site Name <span style="color:red">*</span></label>
+        <select id="supTxSite" style="width:100%"></select>
+      </div>
+      <div style="flex:1;">
+        <label>Type (D/C)<span class="small" style="color:red">*</span></label>
+        <div>
+        </div> 
+        <select id="supTxType" class="input">
+          <option value="Credit">Credit</option>
+          <option value="Debit">Debit</option>
+        </select>
+      </div>
+      <div style="flex:1;">
+        <label>Nature (Head) <span style="color:red">*</span></label>
+        <select id="supTxNature" style="width:100%"></select>
+      </div>
+    </div>
+
+    <div style="display:flex; gap:8px; margin-top:8px;">
+      <div style="flex:1;">
+        <label>Description</label>
+        <input type="text" id="supTxDescription" class="input"/>
+      </div>
+      <div style="flex:1;">
+      </div>
+      <div style="flex:1;">
+        <label>Amount<span class="small" style="color:red">*</span></label>
+        <input type="number" step="0.01" id="supTxAmount" class="input"/>
+      </div>
+    </div>
+
+    <div style="display:flex; gap:8px; margin-top:8px;">
+      <div style="flex:1;">
+        <label>Party (To/From)</label>
+        <input type="text" id="supTxParty" class="input"/>
+      </div>
+      <div style="flex:1;">
+        <label>Invoice No</label>
+        <input type="text" id="supTxInvoice" class="input"/>
+      </div>
+      <div style="flex:1;">
+        <label>GST No</label>
+        <input type="text" id="supTxGst" class="input"/>
+      </div>
+    </div>
+
+    <div style="display:flex; gap:8px; margin-top:8px;">
+      <div style="flex:1;">
+        <label>Company Account</label>
+        <input type="text" id="supTxCompanyAccount" class="input"/>
+      </div>
+      <div style="flex:1;">
+        <label>Mode of Payment</label>
+        <input type="text" id="supTxMode" class="input"/>
+      </div>
+      <div style="flex:1;">
+        <label>Notes</label>
+        <input type="text" id="supTxNotes" class="input"/>
+      </div>
+    </div>
+
+    <div style="margin-top:12px; text-align:right;">
+      <button class="btn ghost" id="supTxClose">Close</button>
+      <button class="btn" id="supTxSave">Save</button>
+    </div>
+  </div>
+
+  <div id="supProcessing"><div class="box"><i class="fa-solid fa-spinner fa-spin"></i><div>Processing...</div></div></div>
+
+  <script>
+    // ----- utilities -----
+    function supShowProcessing(){ document.getElementById('supProcessing').style.display = 'flex'; }
+    function supHideProcessing(){ document.getElementById('supProcessing').style.display = 'none'; }
+    // Replace your existing utility functions with these:
+function supShowModal(id) { 
+  var m = document.getElementById(id); 
+  var overlay = document.getElementById('supModalOverlay');
+  if(m) {
+    m.style.display = 'block'; 
+    overlay.style.display = 'block'; // Show dimmed background
+  }
+}
+
+function supHideModal(id) { 
+  var m = document.getElementById(id); 
+  var overlay = document.getElementById('supModalOverlay');
+  if(m) {
+    m.style.display = 'none'; 
+    overlay.style.display = 'none'; // Hide dimmed background
+  }
+}
+    function showFieldError(inputEl, message) {
+      clearFieldError(inputEl);
+      inputEl.classList.add('input-error');
+      var err = document.createElement('div');
+      err.className = 'field-error';
+      err.innerText = message;
+      inputEl.parentNode.appendChild(err);
+    }
+
+    function clearFieldError(inputEl) {
+      inputEl.classList.remove('input-error');
+      var errs = inputEl.parentNode.querySelectorAll('.field-error');
+      errs.forEach(e => e.remove());
+    }
+
+    function clearAllErrors(container) {
+      container.querySelectorAll('.input-error').forEach(el => el.classList.remove('input-error'));
+      container.querySelectorAll('.field-error').forEach(el => el.remove());
+    }
+
+
+// ----- state -----
+    var supDimensions = {};
+    var supTransactions = []; // Holds ONLY the current page's rows
+    var supHeaders = [];
+    var supCurrentPage = 1;
+    var supTotalPages = 1;
+    var supTotalRecords = 0;
+    var supPerPage = 25;
+    var supDateFilterActive = false;
+    
+    function critToHeader(crit) {
+      if (!crit || crit === 'All') return null;
+      if (crit === 'Nature(Head)') return 'Nature (Head)';
+      return crit;
+    }
+
+    // ----- init -----
+    function supInit() {
+      // wire buttons
+      document.getElementById('supBtnExportPdf').addEventListener('click', supExportPdf);
+      document.getElementById('supDatePreset').addEventListener('change', supApplyDateFilter);
+      document.getElementById('supFromDate').addEventListener('change', supApplyDateFilter);
+      document.getElementById('supToDate').addEventListener('change', supApplyDateFilter);
+      document.getElementById('supBtnClearDate').addEventListener('click', supClearDateFilter);
+
+      document.getElementById('supBtnNewTx').addEventListener('click', supOpenNewTx);
+      
+      // MODIFIED: Close button now hides modal AND reloads table to show new entries
+      document.getElementById('supTxClose').addEventListener('click', function(){ 
+          supHideModal('supModalTx'); 
+          supLoadTransactions(); 
+      });
+      
+      document.getElementById('supTxSave').addEventListener('click', supSaveTransaction);
+
+      document.getElementById('supBtnNewIncome').addEventListener('click', function(){ document.getElementById('supIncomeName').value=''; supShowModal('supModalIncome'); });
+      document.getElementById('supIncomeClose').addEventListener('click', function(){ supHideModal('supModalIncome'); });
+      document.getElementById('supIncomeSave').addEventListener('click', supSaveIncomeHead);
+
+      document.getElementById('supBtnNewExpense').addEventListener('click', function(){ document.getElementById('supExpenseName').value=''; supShowModal('supModalExpense'); });
+      document.getElementById('supExpenseClose').addEventListener('click', function(){ supHideModal('supModalExpense'); });
+      document.getElementById('supExpenseSave').addEventListener('click', supSaveExpenseHead);
+
+      document.getElementById('supBtnSearch').addEventListener('click', supSearch);
+      document.getElementById('supBtnClear').addEventListener('click', function(){
+        document.getElementById('supSearchQuery').value='';
+        document.getElementById('supSearchCriteria').value='All';
+        supLoadTransactions('last'); // Reload server without search
+      });
+
+      // init select2
+      $(document).ready(function(){
+        $('#supTxSite').select2({ placeholder: 'Select site', width: '100%', dropdownParent: $('#supModalTx') });
+        $('#supTxNature').select2({ placeholder: 'Select head', width: '100%', dropdownParent: $('#supModalTx') });
+      });
+
+      supLoadDimensions();
+      supLoadTransactions();
+    }
+
+    // ----- dimensions -----
+    function supLoadDimensions() {
+      supShowProcessing();
+      google.script.run.withSuccessHandler(function(res){
+        supHideProcessing();
+        if (!res || res.status !== 'ok') { alert('Unable to load Dimensions'); return; }
+        supDimensions = res.byCol || {};
+        supPopulateTxSelects();
+      }).sup_getDimensions();
+    }
+
+    function supPopulateTxSelects() {
+      var sites = supDimensions['Site Name'] || [];
+      var $site = $('#supTxSite');
+      $site.empty();
+      sites.forEach(function(s){ $site.append(new Option(s, s)); });
+      // Don't trigger change here immediately unless needed
+      
+      function populateForType(t) {
+        var arr = (t === 'Credit') ?
+        (supDimensions['Income Head'] || []) : (supDimensions['Expense Head'] || []);
+        var $nat = $('#supTxNature');
+        $nat.empty();
+        arr.forEach(function(v){ $nat.append(new Option(v, v)); });
+        $nat.trigger('change');
+      }
+      populateForType($('#supTxType').val());
+      $('#supTxType').on('change', function(){ populateForType(this.value); });
+    }
+
+    // ----- transactions load -----
+    // ----- transactions load -----
+    function supLoadTransactions(pageToLoad) {
+      supShowProcessing();
+      
+      // Collect filter states to send to server
+      var params = {
+        page: pageToLoad || 'last', // Default to last page
+        perPage: supPerPage,
+        searchCrit: document.getElementById('supSearchCriteria').value,
+        searchQuery: document.getElementById('supSearchQuery').value.trim(),
+        datePreset: document.getElementById('supDatePreset').value,
+        fromDate: document.getElementById('supFromDate').value,
+        toDate: document.getElementById('supToDate').value
+      };
+
+      google.script.run.withSuccessHandler(function(res){
+        supHideProcessing();
+        if (!res || res.status !== 'ok') {
+          document.getElementById('supTableContainer').innerHTML = '<div class="small">No records found or sheet missing.</div>';
+          document.getElementById('supPagination').innerHTML = '';
+          document.getElementById('supPaginationTop').innerHTML = '';
+          return;
+        }
+        
+        supHeaders = res.headers || [];
+        supTransactions = res.rows || []; // Only contains 25 records now
+        supCurrentPage = res.page;
+        supTotalPages = res.pages;
+        supTotalRecords = res.total;
+        
+        supRenderTable();
+      }).sup_getTransactionsPaginated(params);
+    }
+
+    // ----- Create new Tx modal -----
+    function supOpenNewTx() {
+      // MODIFIED: No ID generation on client side. ID is handled by server.
+      document.getElementById('supTxId').value = ''; 
+      
+      document.getElementById('supTxDate').valueAsDate = new Date();
+      document.getElementById('supTxCompany').value = 'Main';
+      document.getElementById('supTxAmount').value = '';
+      document.getElementById('supTxDescription').value = '';
+      document.getElementById('supTxParty').value = '';
+      document.getElementById('supTxInvoice').value = '';
+      document.getElementById('supTxGst').value = '';
+      document.getElementById('supTxCompanyAccount').value = '';
+      document.getElementById('supTxMode').value = '';
+      document.getElementById('supTxNotes').value = '';
+      
+      supPopulateTxSelects();
+      
+      setTimeout(function(){
+        try {
+          if ($('#supTxSite').hasClass('select2-hidden-accessible')) $('#supTxSite').select2('destroy');
+          if ($('#supTxNature').hasClass('select2-hidden-accessible')) $('#supTxNature').select2('destroy');
+        } catch(e){}
+        $('#supTxSite').select2({ placeholder: 'Select site', width: '100%', dropdownParent: $('#supModalTx') });
+        $('#supTxNature').select2({ placeholder: 'Select head', width: '100%', dropdownParent: $('#supModalTx') });
+      }, 40);
+      
+      supShowModal('supModalTx');
+    }
+
+    // ----- Save new transaction -----
+    function supSaveTransaction(){
+      // MODIFIED: No reading of ID here
+      var dateVal = document.getElementById('supTxDate').value;
+      var comp = document.getElementById('supTxCompany').value.trim();
+      var site = $('#supTxSite').val();
+      var type = document.getElementById('supTxType').value;
+      var nature = $('#supTxNature').val();
+      var desc = document.getElementById('supTxDescription').value.trim();
+      var amount = parseFloat(document.getElementById('supTxAmount').value || 0);
+      var party = document.getElementById('supTxParty').value.trim();
+      var invoice = document.getElementById('supTxInvoice').value.trim();
+      var gst = document.getElementById('supTxGst').value.trim();
+      var compAcc = document.getElementById('supTxCompanyAccount').value.trim();
+      var mode = document.getElementById('supTxMode').value.trim();
+      var notes = document.getElementById('supTxNotes').value.trim();
+      var modal = document.getElementById('supModalTx');
+      clearAllErrors(modal);
+
+      var valid = true;
+
+      if (!dateVal) {
+        showFieldError(document.getElementById('supTxDate'), 'Date is required');
+        valid = false;
+      }
+      if (!site) {
+        showFieldError(document.getElementById('supTxSite').parentNode.querySelector('.select2-selection'), 'Site is required');
+        valid = false;
+      }
+      if (!nature) {
+        showFieldError(document.getElementById('supTxNature').parentNode.querySelector('.select2-selection'), 'Nature is required');
+        valid = false;
+      }
+      if (isNaN(amount) || amount <= 0) {
+        showFieldError(document.getElementById('supTxAmount'), 'Amount must be greater than 0');
+        valid = false;
+      }
+
+      if (!valid) return;
+
+      var txObj = {
+        // 'Transaction ID': ... Server will generate this
+        'Date': dateVal,
+        'Company': comp,
+        'Site Name': site,
+        'Type (D/C)': type,
+        'Nature (Head)': nature,
+        'Description': desc,
+        'Amount': amount,
+        'Party (To/From)': party,
+        'Invoice No': invoice,
+        'GST No': gst,
+        'Company Account': compAcc,
+        'Mode of Payment': mode,
+        'Notes': notes
+      };
+
+      supShowProcessing();
+      google.script.run.withSuccessHandler(function(res){
+        supHideProcessing();
+        if (res && res.status === 'ok') {
+          // MODIFIED: Bulk entry workflow
+          alert('Transaction Added Successfully');
+          
+          // 1. DO NOT close modal
+          // 2. DO NOT reload table yet
+          
+          // 3. Reset ONLY Amount and Nature
+          document.getElementById('supTxAmount').value = '';
+          $('#supTxNature').val(null).trigger('change');
+          
+          // 4. Other fields (Date, Site, Party, etc.) remain for next entry
+          
+        } else {
+          alert('Error: ' + (res && res.message ? res.message : 'Unknown'));
+        }
+      }).sup_addTransaction(txObj);
+    }
+
+    // ----- Render table -----
+    // ----- Render table -----
+    function supRenderTable(){
+      var container = document.getElementById('supTableContainer');
+      if (!supTransactions || supTransactions.length === 0) {
+        container.innerHTML = '<div class="small">No records found.</div>';
+        document.getElementById('supPagination').innerHTML = '';
+        document.getElementById('supPaginationTop').innerHTML = '';
+        return;
+      }
+
+      var cols = [
+        { h: 'S.No', key: '__sno', w:'3%' },
+        { h: 'Transaction ID', key: 'Transaction ID', w:'9%' },
+        { h: 'Date', key: 'Date', w:'7%' },
+        { h: 'Company', key: 'Company', w:'5%' },
+        { h: 'Site Name', key: 'Site Name', w:'9%' },
+        { h: 'Type (D/C)', key: 'Type (D/C)', w:'3%' },
+        { h: 'Nature (Head)', key: 'Nature (Head)', w:'10%' },
+        { h: 'Description', key: 'Description', w:'9%' },
+        { h: 'Amount', key: 'Amount', w:'8%' },
+        { h: 'Party (To/From)', key: 'Party (To/From)', w:'5%' },
+        { h: 'Invoice No', key: 'Invoice No', w:'5%' },
+        { h: 'GST No', key: 'GST No', w:'5%' },
+        { h: 'Company Account', key: 'Company Account', w:'5%' },
+        { h: 'Mode of Payment', key: 'Mode of Payment', w:'5%' },
+        { h: 'Notes', key: 'Notes', w:'6%' },
+        { h: 'Action', key: '__action', w:'6%' }
+      ];
+
+      // Visual Cue for active filters
+      var isFiltered = document.getElementById('supSearchQuery').value.trim() !== '' || 
+                       (document.getElementById('supDatePreset').value && document.getElementById('supDatePreset').value !== 'all');
+      
+      var filterCueHtml = isFiltered ? '<div style="color:var(--teal); font-weight:600; font-size:13px; margin-bottom:10px;"><i class="fa-solid fa-filter"></i> Showing filtered results</div>' : '';
+
+      var html = filterCueHtml + '<table><thead><tr>';
+      cols.forEach(function(c){ html += '<th style="width:'+c.w+'">'+c.h+'</th>'; });
+      html += '</tr></thead><tbody>';
+
+      // Base index calculation for accurate S.No
+      var baseIndex = (supCurrentPage - 1) * supPerPage;
+
+      for (var i = 0; i < supTransactions.length; i++){
+        var r = supTransactions[i];
+        var idx = baseIndex + i + 1;
+        var txid = r['Transaction ID'] || '';
+
+        html += '<tr data-txid="'+ txid +'">';
+        html += '<td>' + idx + '</td>';
+        html += '<td>' + (r['Transaction ID'] || '') + '</td>';
+        html += '<td>' + (r['Date'] || '') + '</td>';
+        html += '<td>' + (r['Company'] || '') + '</td>';
+        html += '<td>' + (r['Site Name'] || '') + '</td>';
+        html += '<td>' + (r['Type (D/C)'] || '') + '</td>';
+        html += '<td>' + (r['Nature (Head)'] || '') + '</td>';
+        html += '<td>' + (r['Description'] || '') + '</td>';
+        html += '<td>' + (r['Amount'] !== undefined ? Number(r['Amount']).toFixed(2) : '') + '</td>';
+        html += '<td>' + (r['Party (To/From)'] || '') + '</td>';
+        html += '<td>' + (r['Invoice No'] || '') + '</td>';
+        html += '<td>' + (r['GST No'] || '') + '</td>';
+        html += '<td>' + (r['Company Account'] || '') + '</td>';
+        html += '<td>' + (r['Mode of Payment'] || '') + '</td>';
+        html += '<td>' + (r['Notes'] || '') + '</td>';
+        html += '<td>';
+        html += '<button class="action-btn" onclick="supEditRow(this)"><i class="fa-solid fa-pen-to-square"></i></button>';
+        html += '<button class="action-btn" onclick="supConfirmDelete(this)"><i class="fa-solid fa-trash"></i></button>';
+        html += '</td>';
+        html += '</tr>';
+      }
+
+      html += '</tbody></table>';
+      container.innerHTML = '<div class="tx-table-scroll">' + html + '</div>';
+
+      // --- Pagination UI Generator ---
+      function createPaginationHtml(position) {
+        var pgHtml = '';
+        if (supTotalPages > 1) {
+          if (supCurrentPage > 1) pgHtml += '<button class="page-btn" onclick="supLoadTransactions('+(supCurrentPage-1)+')">Prev</button>';
+          pgHtml += '<span class="small">Page ' + supCurrentPage + ' of ' + supTotalPages + ' (' + supTotalRecords + ' records)</span>';
+          if (supCurrentPage < supTotalPages) pgHtml += '<button class="page-btn" onclick="supLoadTransactions('+(supCurrentPage+1)+')">Next</button>';
+          
+          // "Go to page" input
+          var inputId = 'supGoInput_' + position;
+          pgHtml += '<div style="margin-left:15px; display:inline-flex; gap:4px; align-items:center;">';
+          pgHtml += '<input type="number" id="'+inputId+'" class="input" style="width:60px; padding:4px;" min="1" max="'+supTotalPages+'" placeholder="Pg" />';
+          pgHtml += '<button class="btn ghost" style="padding:4px 8px;" onclick="var p=parseInt(document.getElementById(\''+inputId+'\').value); if(p) supLoadTransactions(p);">Go</button>';
+          pgHtml += '</div>';
+        }
+        return pgHtml;
+      }
+
+      document.getElementById('supPaginationTop').innerHTML = createPaginationHtml('top');
+      document.getElementById('supPagination').innerHTML = createPaginationHtml('bottom');
+    }
+
+    function supGotoPage(p){ supCurrentPage = p; supRenderTable(); }
+
+    // ----- Search -----
+    // ----- Search & Filters -----
+    function supSearch(){
+      supLoadTransactions(1); // Load page 1 of new search criteria
+    }
+
+    function supApplyDateFilter() {
+        var preset = document.getElementById('supDatePreset').value;
+        var fromInput = document.getElementById('supFromDate');
+        var toInput = document.getElementById('supToDate');
+        
+        fromInput.disabled = preset !== 'custom';
+        toInput.disabled = preset !== 'custom';
+        
+        if (preset === 'all') {
+            fromInput.value = '';
+            toInput.value = '';
+        }
+        
+        supDateFilterActive = preset !== 'all';
+        supLoadTransactions(1); // Load page 1 of new filter criteria
+    }
+
+    function supClearDateFilter() {
+        document.getElementById('supDatePreset').value = 'all';
+        document.getElementById('supFromDate').value = '';
+        document.getElementById('supToDate').value = '';
+        document.getElementById('supFromDate').disabled = true;
+        document.getElementById('supToDate').disabled = true;
+        supDateFilterActive = false;
+        supLoadTransactions('last'); // Clear filter and jump to last page
+    }
+
+    // ----- Inline Edit / Update / Cancel -----
+    function supEditRow(btn) {
+      if (document.querySelector('tr.editing')) {
+        alert('Finish editing the current row first');
+        return;
+      }
+
+      var tr = btn.closest('tr');
+      tr.classList.add('editing');
+      var txid = tr.getAttribute('data-txid');
+      if (!txid) { alert('Missing Transaction ID'); return; }
+
+      var rowObj = supTransactions.find(function(r){ return String(r['Transaction ID']) === String(txid); });
+      if (!rowObj) return;
+
+      var editHtml = '';
+      editHtml += '<td>' + tr.cells[0].innerText + '</td>';
+      editHtml += '<td>' + (rowObj['Transaction ID'] || '') + '</td>';
+      editHtml += '<td><input id="sup_edit_Date_'+txid+'" class="editable-input" type="date" value="'+ formatDateForInput(rowObj['Date']) +'"></td>';
+      editHtml += '<td><select id="sup_edit_Company_'+txid+'" class="editable-input"><option value="Main">Main</option><option value="GST">GST</option></select></td>';
+      editHtml += '<td><select id="sup_edit_Site_'+txid+'" class="editable-input"></select></td>';
+      editHtml += '<td><select id="sup_edit_Type_'+txid+'" class="editable-input"><option value="Credit">Credit</option><option value="Debit">Debit</option></select></td>';
+      editHtml += '<td><select id="sup_edit_Nature_'+txid+'" class="editable-input"></select></td>';
+      editHtml += '<td><input id="sup_edit_Description_'+txid+'" class="editable-input" type="text" value="'+ escapeHtml(rowObj['Description']||'') +'"></td>';
+      editHtml += '<td><input id="sup_edit_Amount_'+txid+'" class="editable-input" type="number" step="0.01" value="'+ (rowObj['Amount']!==undefined? Number(rowObj['Amount']):'') +'"></td>';
+      editHtml += '<td><input id="sup_edit_Party_'+txid+'" class="editable-input" type="text" value="'+ escapeHtml(rowObj['Party (To/From)']||'') +'"></td>';
+      editHtml += '<td><input id="sup_edit_Invoice_'+txid+'" class="editable-input" type="text" value="'+ escapeHtml(rowObj['Invoice No']||'') +'"></td>';
+      editHtml += '<td><input id="sup_edit_GST_'+txid+'" class="editable-input" type="text" value="'+ escapeHtml(rowObj['GST No']||'') +'"></td>';
+      editHtml += '<td><input id="sup_edit_CompanyAccount_'+txid+'" class="editable-input" type="text" value="'+ escapeHtml(rowObj['Company Account']||'') +'"></td>';
+      editHtml += '<td><input id="sup_edit_Mode_'+txid+'" class="editable-input" type="text" value="'+ escapeHtml(rowObj['Mode of Payment']||'') +'"></td>';
+      editHtml += '<td><input id="sup_edit_Notes_'+txid+'" class="editable-input" type="text" value="'+ escapeHtml(rowObj['Notes']||'') +'"></td>';
+      
+      editHtml += '<td class="action-buttons-row">';
+      editHtml += '<button class="btn" onclick="supUpdateRow(\''+txid+'\')">Update</button>';
+      editHtml += '<button class="btn ghost" onclick="supCancelEdit(\''+txid+'\')">Cancel</button>';
+      editHtml += '</td>';
+      
+      document.querySelectorAll('.action-btn').forEach(function(b){
+        b.disabled = true;
+        b.style.opacity = '0.4';
+        b.style.pointerEvents = 'none';
+      });
+      tr.innerHTML = editHtml;
+
+      var siteSelect = document.getElementById('sup_edit_Site_'+txid);
+      var sites = supDimensions['Site Name'] || [];
+      sites.forEach(function(s){ siteSelect.appendChild(new Option(s, s)); });
+      siteSelect.value = rowObj['Site Name'] || '';
+      
+      document.getElementById('sup_edit_Type_'+txid).value = rowObj['Type (D/C)'] || '';
+      
+      function populateEditNature() {
+        var t = document.getElementById('sup_edit_Type_'+txid).value;
+        var arr = (t === 'Credit') ? (supDimensions['Income Head'] || []) : (supDimensions['Expense Head'] || []);
+        var sel = document.getElementById('sup_edit_Nature_'+txid);
+        sel.innerHTML = '';
+        arr.forEach(function(v){ sel.appendChild(new Option(v, v)); });
+        sel.value = rowObj['Nature (Head)'] || (arr[0] || '');
+      }
+      populateEditNature();
+      document.getElementById('sup_edit_Type_'+txid).addEventListener('change', populateEditNature);
+    }
+
+    function supCancelEdit(txid) {
+      supLoadTransactions(supCurrentPage);
+      document.querySelectorAll('.action-btn').forEach(function(b){
+        b.disabled = false;
+        b.style.opacity = '';
+        b.style.pointerEvents = '';
+      });
+    }
+
+    function supUpdateRow(txid) {
+      var updated = {};
+      updated['Date'] = document.getElementById('sup_edit_Date_'+txid).value;
+      updated['Company'] = document.getElementById('sup_edit_Company_'+txid).value;
+      updated['Site Name'] = document.getElementById('sup_edit_Site_'+txid).value;
+      updated['Type (D/C)'] = document.getElementById('sup_edit_Type_'+txid).value;
+      updated['Nature (Head)'] = document.getElementById('sup_edit_Nature_'+txid).value;
+      updated['Description'] = document.getElementById('sup_edit_Description_'+txid).value;
+      updated['Amount'] = parseFloat(document.getElementById('sup_edit_Amount_'+txid).value || 0);
+      updated['Party (To/From)'] = document.getElementById('sup_edit_Party_'+txid).value;
+      updated['Invoice No'] = document.getElementById('sup_edit_Invoice_'+txid).value;
+      updated['GST No'] = document.getElementById('sup_edit_GST_'+txid).value;
+      updated['Company Account'] = document.getElementById('sup_edit_CompanyAccount_'+txid).value;
+      updated['Mode of Payment'] = document.getElementById('sup_edit_Mode_'+txid).value;
+      updated['Notes'] = document.getElementById('sup_edit_Notes_'+txid).value;
+      var rowEl = document.querySelector('tr[data-txid="'+txid+'"]');
+      clearAllErrors(rowEl);
+      var valid = true;
+
+      var dateEl = document.getElementById('sup_edit_Date_'+txid);
+      var siteEl = document.getElementById('sup_edit_Site_'+txid);
+      var natureEl = document.getElementById('sup_edit_Nature_'+txid);
+      var amtEl = document.getElementById('sup_edit_Amount_'+txid);
+      if (!updated['Date']) {
+        showFieldError(dateEl, 'Date is required');
+        valid = false;
+      }
+      if (!updated['Site Name']) {
+        showFieldError(siteEl, 'Site is required');
+        valid = false;
+      }
+      if (!updated['Nature (Head)']) {
+        showFieldError(natureEl, 'Nature is required');
+        valid = false;
+      }
+      if (isNaN(updated['Amount']) || updated['Amount'] <= 0) {
+        showFieldError(amtEl, 'Amount must be greater than 0');
+        valid = false;
+      }
+
+      if (!valid) return;
+
+      supShowProcessing();
+      google.script.run.withSuccessHandler(function(res){
+        supHideProcessing();
+        if (res && res.status === 'ok') {
+          alert('Transaction Details Updated');
+          supLoadTransactions(supCurrentPage);
+            document.querySelectorAll('.action-btn').forEach(function(b){
+              b.disabled = false;
+              b.style.opacity = '';
+              b.style.pointerEvents = '';
+            });
+        } else {
+          alert('Error: ' + (res && res.message ? res.message : 'Unknown'));
+        }
+      }).sup_updateTransactionById(txid, updated);
+    }
+
+    function supConfirmDelete(btn) {
+      var tr = btn.closest('tr');
+      var txid = tr.getAttribute('data-txid');
+      if (!txid) return;
+      if (!confirm('Delete transaction ' + txid + '?')) return;
+      supShowProcessing();
+      google.script.run.withSuccessHandler(function(res){
+        supHideProcessing();
+        if (res && res.status === 'ok') {
+          alert('Deleted');
+          supLoadTransactions(supCurrentPage);
+        } else {
+          alert('Error: ' + (res && res.message ? res.message : 'Unknown'));
+        }
+      }).sup_deleteTransactionById(txid);
+    }
+
+    function formatDateForInput(ds) {
+      if (!ds) return '';
+      var d = new Date(ds);
+      if (!isNaN(d)) {
+        var yyyy = d.getFullYear();
+        var mm = ('0'+(d.getMonth()+1)).slice(-2);
+        var dd = ('0'+d.getDate()).slice(-2);
+        return yyyy + '-' + mm + '-' + dd;
+      }
+      var m = ds.match(/^(\d{2})-([A-Za-z]{3})-(\d{4})$/);
+      if (m) {
+        var months = { Jan:0, Feb:1, Mar:2, Apr:3, May:4, Jun:5, Jul:6, Aug:7, Sep:8, Oct:9, Nov:10, Dec:11 };
+        var dt = new Date(m[3], months[m[2]], m[1]);
+        if (!isNaN(dt)) {
+          var yyyy = dt.getFullYear();
+          var mm = ('0'+(dt.getMonth()+1)).slice(-2);
+          var dd = ('0'+dt.getDate()).slice(-2);
+          return yyyy + '-' + mm + '-' + dd;
+        }
+      }
+      return '';
+    }
+
+    function escapeHtml(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+    function supSaveIncomeHead() {
+      var val = document.getElementById('supIncomeName').value.trim();
+      if (!val) { alert('Income Head Name required'); return; }
+      supShowProcessing();
+      google.script.run.withSuccessHandler(function(res){
+        supHideProcessing();
+        if (res && res.status === 'ok') {
+          alert('New Income Head Added');
+          supHideModal('supModalIncome');
+          supLoadDimensions();
+        } else {
+          alert('Error: ' + (res && res.message ? res.message : 'Unknown'));
+        }
+      }).sup_addDimensionValue('Income Head', val);
+    }
+
+    function supSaveExpenseHead() {
+      var val = document.getElementById('supExpenseName').value.trim();
+      if (!val) { alert('Expense Head Name required'); return; }
+      supShowProcessing();
+      google.script.run.withSuccessHandler(function(res){
+        supHideProcessing();
+        if (res && res.status === 'ok') {
+          alert('New Expense Head Added');
+          supHideModal('supModalExpense');
+          supLoadDimensions();
+        } else {
+          alert('Error: ' + (res && res.message ? res.message : 'Unknown'));
+        }
+      }).sup_addDimensionValue('Expense Head', val);
+    }
+
+    // Site functions removed
+
+    function supExportPdf() {
+      if (supTotalRecords === 0) {
+        alert('No data to export');
+        return;
+      }
+
+      // Send the current filter state to the backend
+      var params = {
+        searchCrit: document.getElementById('supSearchCriteria').value,
+        searchQuery: document.getElementById('supSearchQuery').value.trim(),
+        datePreset: document.getElementById('supDatePreset').value,
+        fromDate: document.getElementById('supFromDate').value,
+        toDate: document.getElementById('supToDate').value
+      };
+
+      var meta = {
+        company: 'Amirtham Construction',
+        dateRange: getActiveDateRangeLabel()
+      };
+      
+      supShowProcessing();
+
+      google.script.run
+        .withSuccessHandler(function(url){
+          supHideProcessing();
+          if (url) window.open(url, '_blank');
+          else alert('PDF generation failed');
+        })
+        .withFailureHandler(function(err){
+          supHideProcessing();
+          console.error(err);
+          alert('Error while exporting PDF');
+        })
+        .sup_exportTransactionsPdf(params, meta); // Now passing params instead of rows
+    }
+
+    function getActiveDateRangeLabel() {
+      const preset = document.getElementById('supDatePreset').value;
+      const from = document.getElementById('supFromDate').value;
+      const to = document.getElementById('supToDate').value;
+      if (preset === '1m') return 'Last 1 Month';
+      if (preset === '6m') return 'Last 6 Months';
+      if (preset === '1y') return 'Last 1 Year';
+
+      if (from || to) {
+        return `From ${from || 'start'} to ${to || 'today'}`;
+      }
+
+      return 'All Dates';
+    }
+
+    // initialize on load
+    supInit();
+  </script>
+</body>
+</html>

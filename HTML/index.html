@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Dashboard</title>
+  <base target="_top">
+
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&family=Roboto:wght@400;500&family=Montserrat:wght@400;500&display=swap" rel="stylesheet">
+  
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+  
+  <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+
+  <style>
+    /* General Reset and Fonts */
+    * { margin:0; padding:0; box-sizing:border-box; font-family:'Poppins', sans-serif; }
+    body { background:#f5f7fa; }
+
+    /* Dashboard Container [Source: 3] */
+    #dash-container { 
+      width: 100%; 
+      margin: 0 auto; 
+      padding: 20px; 
+    }
+
+    /* Header [Source: 2, 3] */
+    .dash-header h2 { 
+      font-size: 2rem; 
+      color: #021640; 
+      margin-bottom: 4px; 
+    }
+    .dash-header p { 
+      font-size: 1rem; 
+      color: #021640; 
+      opacity: 0.7; 
+      margin-top: 2px; 
+    }
+
+    /* KPI Cards Section [Source: 4] */
+    .dash-kpi-row {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr); /* 7 columns for 7 cards */
+      gap: 20px;
+      margin: 20px 0;
+    }
+
+    /* KPI Card Styling [Source: 4, 8] */
+    .dash-kpi-card {
+      background: #ffffff;
+      height: 150px;
+      padding: 15px;
+      border-radius: 8px; /* Standard rounded corner */
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      color: #021640;
+    }
+
+    /* KPI Titles and Icons [Source: 4, 8] */
+    .dash-kpi-card h3 {
+      font-size: 0.85rem; /* Small title */
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      color: #021640;
+      margin-bottom: 5px;
+    }
+    
+    .dash-kpi-card h3 i {
+      margin-right: 8px;
+      color: #021640;
+    }
+
+    /* KPI Values/Results [Source: 4, 8] */
+    .dash-kpi-card h2 {
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: #021640;
+      align-self: flex-start;
+    }
+
+    /* Charts Grid Layout [Source: 10] */
+    .dash-charts-container {
+      display: flex;
+      width: 100%;
+      gap: 20px;
+    }
+
+    /* Column 1 (60%) */
+    .dash-col-1 {
+      width: 60%;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    /* Column 2 (40%) */
+    .dash-col-2 {
+      width: 40%;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    /* Chart Cards styling */
+    .dash-chart-card {
+      background: #fff;
+      border-radius: 10px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+      padding: 15px;
+      color: #021640;
+      width: 100%;
+    }
+
+    .dash-chart-card h3 {
+      font-size: 1rem;
+      margin-bottom: 10px;
+      color: #021640;
+    }
+
+    /* Chart Heights [Source: 11, 13, 14] */
+    #dash-chart1, #dash-chart2 {
+      height: 300px;
+    }
+    
+    #dash-chart3 {
+      height: 600px; /* Equal to col 1 height roughly */
+    }
+  /* Container to hold the scrollable area */
+.chart-scroll-wrapper {
+  width: 100%;
+  overflow-x: auto; /* Enables horizontal scroll */
+  overflow-y: hidden;
+}
+
+/* This is the actual element ApexCharts will build into */
+#dash-chart2 {
+  min-width: 100%; /* Ensures it fills space at minimum */
+}
+
+
+
+@media (max-width: 768px) {
+    .dash-kpi-row {
+      grid-template-columns: repeat(2, 1fr); /* 2 columns on mobile */
+    }
+    .dash-charts-container {
+      flex-direction: column; /* Stack columns vertically */
+    }
+    .dash-col-1, .dash-col-2 {
+      width: 100%; /* Full width on mobile */
+    }
+  }
+
+  /* Universal Scroll Wrapper for all charts */
+  .chart-scroll-wrapper {
+    width: 100%;
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch; /* Smooth scroll on iOS */
+  }
+
+  /* Set a minimum width for charts so they don't shrink */
+  #dash-chart1, #dash-chart2, #dash-chart3 {
+    min-width: 600px; /* Forces scrollbar on mobile instead of shrinking */
+  }
+  </style>
+</head>
+
+<body>
+
+  <div id="dash-container">
+    <div class="dash-header">
+      <h2>Dashboard</h2>
+      <p>Key trends and business insights</p>
+    </div>
+
+    <div class="dash-kpi-row">
+      
+      <div class="dash-kpi-card">
+        <h3><i class="fas fa-coins"></i>Total Revenue</h3>
+        <h2 id="dash-kpi-revenue">Loading...</h2>
+      </div>
+
+      <div class="dash-kpi-card">
+        <h3><i class="fas fa-file-invoice-dollar"></i>Total Expenditure</h3> <h2 id="dash-kpi-expenditure">Loading...</h2>
+      </div>
+
+      <div class="dash-kpi-card">
+        <h3><i class="fas fa-chart-line"></i>Total Profit</h3>
+        <h2 id="dash-kpi-total-profit">Loading...</h2>
+      </div>
+
+      <div class="dash-kpi-card">
+        <h3><i class="fas fa-building"></i>Total Company Expenses</h3>
+        <h2 id="dash-kpi-comp-exp">Loading...</h2>
+      </div>
+
+      <div class="dash-kpi-card">
+        <h3><i class="fas fa-wallet"></i>Net Profit</h3>
+        <h2 id="dash-kpi-net-profit">Loading...</h2>
+      </div>
+
+      <div class="dash-kpi-card"></div>
+
+      <div class="dash-kpi-card"></div>
+
+    </div>
+
+    <div class="dash-charts-container">
+      
+      <div class="dash-col-1">
+        
+        <div class="dash-chart-card">
+          <h3>Company Profit Growth</h3>
+          <div class="chart-scroll-wrapper">
+          <div id="dash-chart1"></div>
+        </div>
+        </div>
+
+        <div class="dash-chart-card">
+          <h3>Profit Percentage</h3>
+          <div class="chart-scroll-wrapper">
+          <div id="dash-chart2"></div>
+        </div>
+        </div>
+
+      </div>
+
+      <div class="dash-col-2">  
+        <div class="dash-chart-card">
+        <h3>Headwise Expenditure</h3>
+        <div class="chart-scroll-wrapper">
+      <div id="dash-chart3"></div>
+      </div>
+      </div>
+      </div>
+
+    </div>
+  </div>
+
+<script>
+    // --- Utils ---
+    function dashFmtCurrency(val) {
+      if (val === undefined || val === null || val === '') return 'Rs 0';
+      return 'Rs ' + Number(val).toLocaleString('en-IN', { maximumFractionDigits: 0 });
+    }
+
+    function dashFmtK(val) {
+      if (val >= 1000) return (val / 1000).toFixed(1).replace('.0','') + 'K';
+      return val;
+    }
+
+    // --- Main Execution ---
+    document.addEventListener('DOMContentLoaded', () => {
+      google.script.run
+        .withSuccessHandler(dashRenderDashboard)
+        .withFailureHandler(err => {
+          console.error("Server Failure:", err);
+          alert('Fatal Error: ' + err.message);
+        })
+        .dashGetDashboardData();
+    });
+
+    function dashRenderDashboard(response) {
+      // 0. Check for Server Side Errors
+      if (!response || response.success === false) {
+        console.error("Data Error:", response);
+        alert("Error loading data: " + (response ? response.error : "Unknown error"));
+        return;
+      }
+      
+      const data = response; // Unwrap data
+      console.log("Data Received:", data); // Debugging: Check Console if charts are empty
+
+      // 1. Render KPIs
+      document.getElementById('dash-kpi-revenue').textContent = dashFmtCurrency(data.kpis.revenue);
+      document.getElementById('dash-kpi-expenditure').textContent = dashFmtCurrency(data.kpis.expenditure);
+      document.getElementById('dash-kpi-total-profit').textContent = dashFmtCurrency(data.kpis.totalProfit);
+      document.getElementById('dash-kpi-comp-exp').textContent = dashFmtCurrency(data.kpis.compExpenses);
+      document.getElementById('dash-kpi-net-profit').textContent = dashFmtCurrency(data.kpis.netProfit);
+
+      // 2. Render Chart 1: Company Profit Growth
+      const optionsChart1 = {
+        chart: {
+          type: 'area', 
+          height: 300,
+          fontFamily: 'Poppins, sans-serif',
+          toolbar: { show: false }
+        },
+        series: [{ name: 'Cumulative Profit', data: data.chart1.values }],
+        stroke: { curve: 'smooth', width: 2, colors: ['#021640'] },
+        fill: { type: 'solid', colors: ['#a1e88b'], opacity: 0.5 },
+        markers: { size: 3, colors: ['#f20558'], strokeColors: '#021640', strokeWidth: 0 },
+        xaxis: {
+          type: 'datetime',
+          categories: data.chart1.dates,
+          labels: { datetimeUTC: false, format: 'dd MMM', style: { colors: '#021640' } },
+          tooltip: { enabled: false }
+        },
+        yaxis: {
+          labels: { formatter: (val) => dashFmtK(val), style: { colors: '#021640' } }
+        },
+        dataLabels: { enabled: false },
+        grid: { borderColor: '#e0e0e0' },
+        colors: ['#021640']
+      };
+      
+      const chart1El = document.querySelector("#dash-chart1");
+      if(chart1El) new ApexCharts(chart1El, optionsChart1).render();
+console.log(data.chart2.values)
+      // 3. Render Chart 2: Profit Percentage (Scrollable)
+      // Check if data exists to prevent crash
+      const countC2 = data.chart2.categories.length;
+      if (countC2 > 0) {
+        const barWidth = 70; 
+        const minWidth = 600;
+        // Calculate width needed for all bars
+        const calcWidth = countC2 * barWidth;
+        const finalWidth = Math.max(minWidth, calcWidth);
+  
+        const optionsChart2 = {
+        chart: {
+          type: 'bar',
+          height: 350,
+          width: finalWidth,
+          fontFamily: 'Poppins, sans-serif',
+          toolbar: { show: false }
+        },
+        series: [{ 
+          name: 'Profit %', 
+          data: data.chart2.values.map(val => {
+            // If the value is small (like 1.19), multiply by 100.
+            // If it's already a whole number (like 38), leave it alone.
+            return (val <= 2 && val > 0) ? (val * 100) : val;
+          }) 
+        }],
+        plotOptions: {
+          bar: { 
+            columnWidth: '45%', 
+            distributed: true, 
+            dataLabels: { 
+              position: 'top',
+              // This ensures labels at the very top don't get cut off
+              hideOverflowingLabels: false 
+            } 
+          }
+        },
+        xaxis: {
+          categories: data.chart2.categories,
+          labels: { rotate: -45, style: { fontSize: '11px', colors: '#021640' } }
+        },
+        yaxis: {
+          // Force the chart to accommodate values higher than 100
+          forceNiceScale: true,
+          labels: { 
+            formatter: (v) => v.toFixed(0) + '%', 
+            style: { colors: '#021640' } 
+          }
+        },
+        dataLabels: {
+          enabled: true,
+          formatter: (v) => v.toFixed(0) + '%',
+          offsetY: -20,
+          style: { colors: ['#021640'] }
+        },
+        legend: { show: false },
+        colors: ['#0066CC', '#0099CC', '#4572C4', '#558ED5', '#1F4E79']
+      };
+        new ApexCharts(document.querySelector("#dash-chart2"), optionsChart2).render();
+      } else {
+        document.querySelector("#dash-chart2").innerHTML = "<p style='padding:20px'>No Data Available</p>";
+      }
+
+// 4. Render Chart 3: Headwise Expenditure (Scrollable & External Labels)
+const countC3 = data.chart3.categories.length;
+
+if (countC3 > 0) {
+    // We set a fixed width of 800px to ensure bars have room for labels at the end
+    // without getting squashed or going off-screen.
+    const scrollWidth = 800; 
+
+    const optionsChart3 = {
+        chart: {
+            type: 'bar',
+            height: Math.max(400, countC3 * 45), // Height grows with data
+            width: scrollWidth, // Fixed width to enable horizontal scroll
+            fontFamily: 'Poppins, sans-serif',
+            toolbar: { show: false }
+        },
+        series: [{ 
+            name: 'Amount', 
+            data: data.chart3.values 
+        }],
+        plotOptions: {
+            bar: { 
+                horizontal: true, 
+                borderRadius: 4, 
+                barHeight: '70%',
+                distributed: true,
+                dataLabels: {
+                    position: 'top', // For horizontal bars, 'top' means the end of the bar
+                }
+            }
+        },
+        xaxis: {
+            categories: data.chart3.categories, 
+            labels: { 
+                formatter: (val) => dashFmtK(val), 
+                style: { colors: '#021640' } 
+            }
+        },
+        yaxis: {
+            labels: { 
+                show: true,
+                maxWidth: 200, // Prevents long names from taking too much space
+                style: { colors: '#021640', fontSize: '12px' } 
+            }
+        },
+        dataLabels: { 
+            enabled: true,
+            textAnchor: 'start', // Start the text at the end of the bar
+            style: { 
+                colors: ['#021640'], // Dark color so it's visible outside the bar
+                fontWeight: 600 
+            },
+            formatter: function (val) {
+                return dashFmtK(val);
+            },
+            offsetX: 10, // Pushes the text 10px to the right of the bar end
+        },
+        colors: ['#4572C4', '#558ED5', '#1F4E79', '#021640', '#0066CC'], 
+        grid: { 
+            borderColor: '#e0e0e0',
+            xaxis: { lines: { show: true } } // Added vertical lines for better scale reading
+        },
+        legend: { show: false }
+    };
+    
+    const chart3El = document.querySelector("#dash-chart3");
+    chart3El.innerHTML = ''; 
+    new ApexCharts(chart3El, optionsChart3).render();
+} else {
+    document.querySelector("#dash-chart3").innerHTML = "<p style='padding:20px'>No Expenditure Data Found</p>";
+  }
+    }
+  </script>
+</body>
+</html>
