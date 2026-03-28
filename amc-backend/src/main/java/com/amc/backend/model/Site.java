@@ -9,6 +9,7 @@ import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Data
@@ -35,6 +36,16 @@ public class Site {
 
     @NotBlank(message = "Company is required")
     private String company; // Main, GST
+
+    private Double quotationAmount;
+
+    private LocalDate dateOfStart;
+
+    private LocalDate dueDate;
+
+    private Double profit;
+
+    private LocalDate profitDate; // "On Date" from CSV
 
     private String expenseHead;
 

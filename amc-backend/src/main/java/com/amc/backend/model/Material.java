@@ -42,6 +42,8 @@ public class Material {
 
     private String notes;
 
+    private String notes2;
+
     private LocalDateTime createdAt;
 
     private LocalDateTime updatedAt;

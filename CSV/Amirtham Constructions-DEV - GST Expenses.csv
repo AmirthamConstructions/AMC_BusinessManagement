@@ -1,0 +1,4 @@
+S.No,Transaction ID,Date,Company,Site Name,Type (D/C),Nature (Head),Description,Amount,Party (To/From),Invoice No,GST No,Company Account,Mode of Payment,Notes,,,Date,Nature (Head),Amount
+1,TXN260206223113,6-Feb-2026,GST,Company Expenses,Debit,Others,Mobile Jio recharge,666.00,,,,,,,,,6-Feb-2026,Others,666.00
+2,TXN260305223432,5-Mar-2026,GST,Company Expenses,Debit,Others,Home triangle,"10,000.00",,,,,,,,,5-Mar-2026,Others,"10,000.00"
+3,TXN260327221850,27-Mar-2026,GST,Thoraipakkam Site,Debit,Others,Test Debi-GST,1.00,,,,,,,,,27-Mar-2026,Others,1.00

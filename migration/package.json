@@ -1,0 +1,14 @@
+{
+  "name": "amc-csv-migration",
+  "version": "1.0.0",
+  "description": "Migrate CSV data from Google Sheets export into MongoDB Atlas",
+  "main": "migrate.js",
+  "scripts": {
+    "migrate": "node migrate.js",
+    "validate": "node validate.js"
+  },
+  "dependencies": {
+    "csv-parse": "^5.5.0",
+    "mongodb": "^5.9.0"
+  }
+}

@@ -1,0 +1,11 @@
+Year,Invoice Month,Filing Month,Invoice No,Invoice Date,Customer Name,Customer GSTIN,Description of Goods / Services,"Taxable Value (₹)
+(A)",CGST %,"CGST Amt (₹)
+(B)",SGST %,"SGST Amt (₹)
+(C)",Invoice Value (A+B+C),Place of Supply,Input Credit Eligible (Yes/No),Remarks,,Invoice Date,Description of Goods / Services,Invoice Value (A+B+C)
+2025,Aug,Sep,,16-Aug-2025,,,,,,,,,,,,NIL,,16-Aug-25,,
+2025,Sep,Oct,1,16-Sep-2025,Mr.Sampath,NA,Civil Works,39250,9%,3532.50,9%,3532.50,46315.00,Chennai,No,,,16-Sep-25,Civil Works,46315.00
+2025,Sep,Oct,2,18-Sep-2025,Mr.Sampath,NA,Civil Works,39250,9%,3532.50,9%,3532.50,46315.00,Chennai,No,,,18-Sep-25,Civil Works,46315.00
+2025,Oct,Nov,AMC/25-26/003,18-Oct-2025,Mr.Aravind,NA,Civil Works,35000,9%,3150.00,9%,3150.00,41300.00,Chennai,No,,,18-Oct-25,Civil Works,41300.00
+2025,Nov,Dec,AMC/25-26/004,22-Nov-2025,Mr.Arumugam,NA,Painting Works,24379,9%,2194.11,9%,2194.11,28767.00,Chennai,No,,,22-Nov-25,Painting Works,28767.00
+2026,Jan,Feb,AMC/25-26/005,25-Jan-2026,INNOVATION DEVELOPERS,33CIBPD2977A1ZT,Construction Services,127118.64,9%,11440.68,9%,11440.68,150000.00,Chennai,Yes,Putty,,25-Jan-26,Construction Services,150000.00
+2026,Feb,Mar,AMC/25-26/006,26-Feb-2026,INNOVATION DEVELOPERS,33CIBPD2977A1ZT,Construction services,127118.64,9%,11440.68,9%,11440.68,150000.00,Chennai,Yes,,,26-Feb-26,Construction services,150000.00

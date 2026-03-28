@@ -20,6 +20,10 @@ public class GstInward {
     @Id
     private String id;
 
+    private String year;
+
+    private String invoiceMonth;
+
     private String purchaseBillNo;
 
     private LocalDate invoiceDate;
@@ -32,11 +36,17 @@ public class GstInward {
 
     private Double taxableValue;
 
+    private Double cgstPercent;
+
     private Double cgstAmount;
+
+    private Double sgstPercent;
 
     private Double sgstAmount;
 
     private Double purchaseBillValue;
+
+    private String placeOfPurchase;
 
     private String inputCreditEligible;
 

@@ -57,6 +57,11 @@ public class SiteService {
         existing.setAddress(site.getAddress());
         existing.setContactNumber(site.getContactNumber());
         existing.setCompany(site.getCompany());
+        existing.setQuotationAmount(site.getQuotationAmount());
+        existing.setDateOfStart(site.getDateOfStart());
+        existing.setDueDate(site.getDueDate());
+        existing.setProfit(site.getProfit());
+        existing.setProfitDate(site.getProfitDate());
         existing.setExpenseHead(site.getExpenseHead());
         existing.setIncomeHead(site.getIncomeHead());
         existing.setPaymentMode(site.getPaymentMode());

@@ -1,0 +1,66 @@
+Date,Income,Income Amount,Expense,Expense Amount,,,,On Date,Site Name,Profit,Credit,,On Date,Site Name,Profit,Credit,Date,Description,Amount,Type (D/C)
+25-Jun-2025,Prabu civil work,"10,000.00",,,,Total Income,"1,082,584.00",25-Jun-2025,Prabu civil work,"10,000.00",Credit,,25-Jun-2025,Prabu civil work,"10,000.00",Credit,25-Jun-2025,Seal,440.00,Debit
+25-Jun-2025,Prabhu Gate works,"7,000.00",,,,Total Expense,"338,902.00",25-Jun-2025,Prabhu Gate works,"7,000.00",Credit,,25-Jun-2025,Prabhu Gate works,"7,000.00",Credit,18-Jul-2025,PAN & GST,"3,000.00",Debit
+25-Jun-2025,,,Seal,440.00,,Total Profit,"743,682.00",25-Jun-2025,Seal,440.00,Debit,,23-Jul-2025,Badri restroom,"2,000.00",Credit,26-Jul-2025,Grill Scrap 1C Ramaniyam,"6,800.00",Credit
+18-Jul-2025,,,PAN & GST,"3,000.00",,,,18-Jul-2025,PAN & GST,"3,000.00",Debit,,23-Jul-2025,"Dr.Vidya, sarvam aptmt","19,286.00",Credit,3-Aug-2025,Chandra Payout,"23,000.00",Debit
+23-Jul-2025,Badri restroom,"2,000.00",,,,,,23-Jul-2025,Badri restroom,"2,000.00",Credit,,3-Aug-2025,1C Ramaniyam,"250,000.00",Credit,3-Aug-2025,Murugaiyan Payout,"30,000.00",Debit
+23-Jul-2025,"Dr.Vidya, sarvam aptmt","19,286.00",,,,,,23-Jul-2025,"Dr.Vidya, sarvam aptmt","19,286.00",Credit,,8-Sep-2025,Sheela nagar,"15,000.00",Credit,8-Aug-2025,Mobile recharge,"1,646.00",Debit
+26-Jul-2025,Grill Scrap 1C Ramaniyam,"6,800.00",,,,,,26-Jul-2025,Grill Scrap 1C Ramaniyam,"6,800.00",Credit,,19-Sep-2025,Mangalambigai flat painting,"2,800.00",Credit,8-Aug-2025,Kannan referal commission besent nagar,"8,000.00",Debit
+3-Aug-2025,1C Ramaniyam,"250,000.00",,,,,,3-Aug-2025,1C Ramaniyam,"250,000.00",Credit,,26-Sep-2025,TNHB Praveen site,"21,400.00",Credit,13-Aug-2025,Freeman laser,"3,500.00",Debit
+3-Aug-2025,,,Chandra Payout,"23,000.00",,,,3-Aug-2025,Chandra Payout,"23,000.00",Debit,,28-Sep-2025,Madipakkam Sampath site,"9,620.00",Credit,14-Aug-2025,GST,"3,000.00",Debit
+3-Aug-2025,,,Murugaiyan Payout,"30,000.00",,,,3-Aug-2025,Murugaiyan Payout,"30,000.00",Debit,,30-Sep-2025,Ramaniyan GA PAinting,"25,000.00",Credit,19-Aug-2025,BSNL Reecharge,900.00,Debit
+8-Aug-2025,,,Mobile recharge,"1,646.00",,,,8-Aug-2025,Mobile recharge,"1,646.00",Debit,,9-Oct-2025,Rohith Flats,"21,727.00",Credit,22-Aug-2025,Visiting card banner,"1,900.00",Debit
+8-Aug-2025,,,Kannan referal commission besent nagar,"8,000.00",,,,8-Aug-2025,Kannan referal commission besent nagar,"8,000.00",Debit,,29-Oct-2025,Rizwana Restroom Renovation,"50,271.00",Credit,23-Aug-2025,Tharun Payout,"11,700.00",Debit
+13-Aug-2025,,,Freeman laser,"3,500.00",,,,13-Aug-2025,Freeman laser,"3,500.00",Debit,,11-Dec-2025,Mr.Vigneshwaran House Repainting,"20,000.00",Credit,10-Sep-2025,Home triangle,"10,000.00",Debit
+14-Aug-2025,,,GST,"3,000.00",,,,14-Aug-2025,GST,"3,000.00",Debit,,11-Dec-2025,Sarvam PVC Works,"7,732.00",Credit,16-Sep-2025,"Breaker ,tools","10,000.00",Debit
+19-Aug-2025,,,BSNL Reecharge,900.00,,,,19-Aug-2025,BSNL Reecharge,900.00,Debit,,4-Jan-2026,Mr.Yuvaraj Pammal,"26,689.00",Credit,26-Sep-2025,Aluminium ladder,"2,800.00",Debit
+22-Aug-2025,,,Visiting card banner,"1,900.00",,,,22-Aug-2025,Visiting card banner,"1,900.00",Debit,,10-Jan-2026,Commission,"8,000.00",Credit,26-Sep-2025,Murugaiyan Payout,"5,000.00",Debit
+23-Aug-2025,,,Tharun Payout,"11,700.00",,,,23-Aug-2025,Tharun Payout,"11,700.00",Debit,,15-Feb-2026,Fathima Kovilambakkam,"16,687.00",Credit,27-Sep-2025,Murugaiyan Payout,"25,000.00",Debit
+8-Sep-2025,Sheela nagar,"15,000.00",,,,,,8-Sep-2025,Sheela nagar,"15,000.00",Credit,,15-Feb-2026,Krishnan Chintadripet ,"7,200.00",Credit,27-Sep-2025,Chandra Payout,"10,000.00",Debit
+10-Sep-2025,,,Home triangle,"10,000.00",,,,10-Sep-2025,Home triangle,"10,000.00",Debit,,5-Mar-2026,Ashok manner,"187,783.00",Credit,27-Sep-2025,Tharun Payout,"15,000.00",Debit
+16-Sep-2025,,,"Breaker ,tools","10,000.00",,,,16-Sep-2025,"Breaker ,tools","10,000.00",Debit,,9-Mar-2026,Ashwin Semmenchery,"39,513.00",Credit,28-Sep-2025,Calculator,930.00,Debit
+19-Sep-2025,Mangalambigai flat painting,"2,800.00",,,,,,19-Sep-2025,Mangalambigai flat painting,"2,800.00",Credit,,11-Mar-2026,Chintadripet electrical,"3,470.00",Credit,21-Oct-2025,GST SEP 1910+750,"2,660.00",Debit
+26-Sep-2025,TNHB Praveen site,"21,400.00",,,,,,26-Sep-2025,TNHB Praveen site,"21,400.00",Credit,,21-Mar-2026,"Rizwana Painting, Electrical","47,097.00",Credit,22-Oct-2025,File,327.00,Debit
+26-Sep-2025,,,Aluminium ladder,"2,800.00",,,,26-Sep-2025,Aluminium ladder,"2,800.00",Debit,,23-Mar-2026,Sivaperumal site,"1,109.00",Credit,21-Nov-2025,Murugaiyan Payout,"50,000.00",Debit
+26-Sep-2025,,,Murugaiyan Payout,"5,000.00",,,,26-Sep-2025,Murugaiyan Payout,"5,000.00",Debit,,26-Mar-2026,Anand Keelkattalai,"192,415.00",Credit,10-Dec-2025,Tharun Payout,"57,049.00",Debit
+27-Sep-2025,,,Murugaiyan Payout,"25,000.00",,,,27-Sep-2025,Murugaiyan Payout,"25,000.00",Debit,,27-Mar-2026,Thoraipakkam Site,"24,908.00",Credit,12-Dec-2025,Home Traingle wallet Recharge,"10,000.00",Debit
+27-Sep-2025,,,Chandra Payout,"10,000.00",,,,27-Sep-2025,Chandra Payout,"10,000.00",Debit,,27-Mar-2026,Srinivas Shollinganallur,"59,077.00",Credit,6-Jan-2026,Murugaiyan Payout,"10,000.00",Debit
+27-Sep-2025,,,Tharun Payout,"15,000.00",,,,27-Sep-2025,Tharun Payout,"15,000.00",Debit,,,,,,6-Jan-2026,Tharun Payout,"10,000.00",Debit
+28-Sep-2025,Madipakkam Sampath site,"9,620.00",,,,,,28-Sep-2025,Madipakkam Sampath site,"9,620.00",Credit,,,,,,24-Jan-2026,50M Measuring tape,660.00,Debit
+28-Sep-2025,,,Calculator,930.00,,,,28-Sep-2025,Calculator,930.00,Debit,,,,,,27-Jan-2026,"Visiting Card,Banner","1,700.00",Debit
+30-Sep-2025,Ramaniyan GA PAinting,"25,000.00",,,,,,30-Sep-2025,Ramaniyan GA PAinting,"25,000.00",Credit,,,,,,6-Feb-2026,Mobile Jio recharge,666.00,Debit
+9-Oct-2025,Rohith Flats,"21,727.00",,,,,,9-Oct-2025,Rohith Flats,"21,727.00",Credit,,,,,,15-Feb-2026,Cutting machine Service- Bearing,300.00,Debit
+21-Oct-2025,,,GST SEP 1910+750,"2,660.00",,,,21-Oct-2025,GST SEP 1910+750,"2,660.00",Debit,,,,,,21-Feb-2026,Ingco Cordless Drill,"5,827.00",Debit
+22-Oct-2025,,,File,327.00,,,,22-Oct-2025,File,327.00,Debit,,,,,,5-Mar-2026,Home triangle,"10,000.00",Debit
+29-Oct-2025,Rizwana Restroom Renovation,"50,271.00",,,,,,29-Oct-2025,Rizwana Restroom Renovation,"50,271.00",Credit,,,,,,8-Mar-2026,Breaker tiles but,450.00,Debit
+21-Nov-2025,,,Murugaiyan Payout,"50,000.00",,Date,,21-Nov-2025,Murugaiyan Payout,"50,000.00",Debit,,,,,,10-Mar-2026,Geetham BF Dinesh,210.00,Debit
+10-Dec-2025,,,Tharun Payout,"57,049.00",,Income,,10-Dec-2025,Tharun Payout,"57,049.00",Debit,,,,,,10-Mar-2026,Maduravoyal Rapido,190.00,Debit
+11-Dec-2025,Mr.Vigneshwaran House Repainting,"20,000.00",,,,Income Amount,,11-Dec-2025,Mr.Vigneshwaran House Repainting,"20,000.00",Credit,,,,,,13-Mar-2026,"Sprit Level, drill bit",566.00,Debit
+11-Dec-2025,Sarvam PVC Works,"7,732.00",,,,Expense,,11-Dec-2025,Sarvam PVC Works,"7,732.00",Credit,,,,,,13-Mar-2026,Beat tank full,"2,481.00",Debit
+12-Dec-2025,,,Home Traingle wallet Recharge,"10,000.00",,Expense Amount,,12-Dec-2025,Home Traingle wallet Recharge,"10,000.00",Debit,,,,,,13-Mar-2026,Home Triangle,"10,000.00",Debit
+4-Jan-2026,Mr.Yuvaraj Pammal,"26,689.00",,,,,,4-Jan-2026,Mr.Yuvaraj Pammal,"26,689.00",Credit,,,,,,,,,
+6-Jan-2026,,,Murugaiyan Payout,"10,000.00",,,,6-Jan-2026,Murugaiyan Payout,"10,000.00",Debit,,,,,,,,,
+6-Jan-2026,,,Tharun Payout,"10,000.00",,,,6-Jan-2026,Tharun Payout,"10,000.00",Debit,,,,,,,,,
+10-Jan-2026,Commission,"8,000.00",,,,,,10-Jan-2026,Commission,"8,000.00",Credit,,,,,,,,,
+24-Jan-2026,,,50M Measuring tape,660.00,,,,24-Jan-2026,50M Measuring tape,660.00,Debit,,,,,,,,,
+27-Jan-2026,,,"Visiting Card,Banner","1,700.00",,,,27-Jan-2026,"Visiting Card,Banner","1,700.00",Debit,,,,,,,,,
+6-Feb-2026,,,Mobile Jio recharge,666.00,,,,6-Feb-2026,Mobile Jio recharge,666.00,Debit,,,,,,,,,
+15-Feb-2026,Fathima Kovilambakkam,"16,687.00",,,,,,15-Feb-2026,Fathima Kovilambakkam,"16,687.00",Credit,,,,,,,,,
+15-Feb-2026,Krishnan Chintadripet ,"7,200.00",,,,,,15-Feb-2026,Krishnan Chintadripet ,"7,200.00",Credit,,,,,,,,,
+15-Feb-2026,,,Cutting machine Service- Bearing,300.00,,,,15-Feb-2026,Cutting machine Service- Bearing,300.00,Debit,,,,,,,,,
+21-Feb-2026,,,Ingco Cordless Drill,"5,827.00",,,,21-Feb-2026,Ingco Cordless Drill,"5,827.00",Debit,,,,,,,,,
+5-Mar-2026,Ashok manner,"187,783.00",,,,,,5-Mar-2026,Ashok manner,"187,783.00",Credit,,,,,,,,,
+5-Mar-2026,,,Home triangle,"10,000.00",,,,5-Mar-2026,Home triangle,"10,000.00",Debit,,,,,,,,,
+8-Mar-2026,,,Breaker tiles but,450.00,,,,8-Mar-2026,Breaker tiles but,450.00,Debit,,,,,,,,,
+9-Mar-2026,Ashwin Semmenchery,"39,513.00",,,,,,9-Mar-2026,Ashwin Semmenchery,"39,513.00",Credit,,,,,,,,,
+10-Mar-2026,,,Geetham BF Dinesh,210.00,,,,10-Mar-2026,Geetham BF Dinesh,210.00,Debit,,,,,,,,,
+10-Mar-2026,,,Maduravoyal Rapido,190.00,,,,10-Mar-2026,Maduravoyal Rapido,190.00,Debit,,,,,,,,,
+11-Mar-2026,Chintadripet electrical,"3,470.00",,,,,,11-Mar-2026,Chintadripet electrical,"3,470.00",Credit,,,,,,,,,
+13-Mar-2026,,,"Sprit Level, drill bit",566.00,,,,13-Mar-2026,"Sprit Level, drill bit",566.00,Debit,,,,,,,,,
+13-Mar-2026,,,Beat tank full,"2,481.00",,,,13-Mar-2026,Beat tank full,"2,481.00",Debit,,,,,,,,,
+13-Mar-2026,,,Home Triangle,"10,000.00",,,,13-Mar-2026,Home Triangle,"10,000.00",Debit,,,,,,,,,
+21-Mar-2026,"Rizwana Painting, Electrical","47,097.00",,,,,,21-Mar-2026,"Rizwana Painting, Electrical","47,097.00",Credit,,,,,,,,,
+23-Mar-2026,Sivaperumal site,"1,109.00",,,,,,23-Mar-2026,Sivaperumal site,"1,109.00",Credit,,,,,,,,,
+26-Mar-2026,Anand Keelkattalai,"192,415.00",,,,,,26-Mar-2026,Anand Keelkattalai,"192,415.00",Credit,,,,,,,,,
+27-Mar-2026,Thoraipakkam Site,"24,908.00",,,,,,27-Mar-2026,Thoraipakkam Site,"24,908.00",Credit,,,,,,,,,
+27-Mar-2026,Srinivas Shollinganallur,"59,077.00",,,,,,27-Mar-2026,Srinivas Shollinganallur,"59,077.00",Credit,,,,,,,,,
