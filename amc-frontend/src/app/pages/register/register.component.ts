@@ -17,6 +17,7 @@ export class RegisterComponent {
   hideConfirmPassword = signal(true);
   loading = signal(false);
   errorMessage = signal<string | null>(null);
+  successMessage = signal<string | null>(null);
 
   constructor(
     private fb: FormBuilder,
@@ -71,7 +72,13 @@ export class RegisterComponent {
     this.authService.register(registerData).subscribe({
       next: () => {
         this.loading.set(false);
-        this.router.navigate(['/dashboard']);
+        // Don't auto-login — clear session and show success
+        this.authService.clearSession();
+        this.successMessage.set('Account created successfully! Redirecting to login...');
+        this.errorMessage.set(null);
+        setTimeout(() => {
+          this.router.navigate(['/login']);
+        }, 2500);
       },
       error: (err) => {
         this.loading.set(false);
