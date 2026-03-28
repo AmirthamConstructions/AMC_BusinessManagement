@@ -3,7 +3,7 @@ package com.amc.backend.controller;
 import com.amc.backend.dto.ApiResponse;
 import com.amc.backend.model.Site;
 import com.amc.backend.service.SiteService;
-import jakarta.validation.Valid;
+import javax.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;

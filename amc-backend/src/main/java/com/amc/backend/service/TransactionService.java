@@ -55,7 +55,7 @@ public class TransactionService {
     }
 
     public Transaction create(Transaction transaction) {
-        if (transaction.getTransactionId() == null || transaction.getTransactionId().isBlank()) {
+        if (transaction.getTransactionId() == null || transaction.getTransactionId().trim().isEmpty()) {
             transaction.setTransactionId("TXN-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase());
         }
         transaction.setCreatedAt(LocalDateTime.now());

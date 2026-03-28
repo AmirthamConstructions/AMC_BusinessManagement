@@ -42,8 +42,11 @@ public class UserService {
     public User update(String id, User user) {
         User existing = findById(id);
         existing.setName(user.getName());
+        existing.setPhone(user.getPhone());
         existing.setPicture(user.getPicture());
         existing.setRole(user.getRole());
+        existing.setEnabled(user.isEnabled());
+        existing.setAccountLocked(user.isAccountLocked());
         existing.setUpdatedAt(LocalDateTime.now());
         return userRepository.save(existing);
     }

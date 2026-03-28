@@ -1,7 +1,8 @@
 package com.amc.backend.model;
 
-import jakarta.validation.constraints.Email;
-import jakarta.validation.constraints.NotBlank;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import javax.validation.constraints.Email;
+import javax.validation.constraints.NotBlank;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -11,6 +12,7 @@ import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Data
 @Builder
@@ -30,14 +32,33 @@ public class User {
     @NotBlank(message = "Name is required")
     private String name;
 
+    @JsonIgnore
+    private String password;
+
+    private String phone;
+
     private String picture;
 
     @Builder.Default
-    private String role = "viewer"; // admin, accountant, viewer
+    private Role role = Role.VIEWER;
+
+    @Builder.Default
+    private boolean enabled = true;
+
+    @Builder.Default
+    private boolean accountLocked = false;
+
+    private String provider; // "local", "google"
 
     private LocalDateTime lastLoginAt;
 
     private LocalDateTime createdAt;
 
     private LocalDateTime updatedAt;
+
+    public enum Role {
+        ADMIN,
+        ACCOUNTANT,
+        VIEWER
+    }
 }

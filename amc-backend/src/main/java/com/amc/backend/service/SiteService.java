@@ -39,7 +39,7 @@ public class SiteService {
     }
 
     public Site create(Site site) {
-        if (site.getSiteId() == null || site.getSiteId().isBlank()) {
+        if (site.getSiteId() == null || site.getSiteId().trim().isEmpty()) {
             site.setSiteId("SITE-" + UUID.randomUUID().toString().substring(0, 6).toUpperCase());
         }
         if (siteRepository.existsBySiteId(site.getSiteId())) {

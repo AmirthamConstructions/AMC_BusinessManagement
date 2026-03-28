@@ -4,7 +4,10 @@
   </button>
   <span class="brand">AMC Business</span>
   <span class="spacer"></span>
-  <span class="user-name" *ngIf="auth.currentUser() as user">{{ user.name }}</span>
+  @if (auth.currentUser(); as user) {
+    <span class="user-role-badge">{{ user.role }}</span>
+    <span class="user-name">{{ user.name }}</span>
+  }
   <button mat-icon-button [matMenuTriggerFor]="userMenu">
     <mat-icon>account_circle</mat-icon>
   </button>
@@ -13,6 +16,11 @@
       <mat-icon>person</mat-icon>
       <span>{{ auth.currentUser()?.email }}</span>
     </button>
+    <button mat-menu-item disabled>
+      <mat-icon>badge</mat-icon>
+      <span>Role: {{ auth.currentUser()?.role }}</span>
+    </button>
+    <mat-divider></mat-divider>
     <button mat-menu-item (click)="auth.logout()">
       <mat-icon>logout</mat-icon>
       <span>Logout</span>

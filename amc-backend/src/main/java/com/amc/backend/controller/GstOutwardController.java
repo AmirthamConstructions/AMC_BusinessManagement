@@ -3,7 +3,7 @@ package com.amc.backend.controller;
 import com.amc.backend.dto.ApiResponse;
 import com.amc.backend.model.GstOutward;
 import com.amc.backend.service.GstOutwardService;
-import jakarta.validation.Valid;
+import javax.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;

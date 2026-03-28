@@ -3,7 +3,7 @@ package com.amc.backend.controller;
 import com.amc.backend.dto.ApiResponse;
 import com.amc.backend.model.Dimension;
 import com.amc.backend.service.DimensionService;
-import jakarta.validation.Valid;
+import javax.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -52,7 +52,7 @@ public class DimensionController {
     @PatchMapping("/{id}/add-value")
     public ResponseEntity<ApiResponse<Dimension>> addValue(@PathVariable String id, @RequestBody Map<String, String> body) {
         String value = body.get("value");
-        if (value == null || value.isBlank()) {
+        if (value == null || value.trim().isEmpty()) {
             throw new IllegalArgumentException("Value is required");
         }
         Dimension updated = dimensionService.addValue(id, value);
@@ -62,7 +62,7 @@ public class DimensionController {
     @PatchMapping("/{id}/remove-value")
     public ResponseEntity<ApiResponse<Dimension>> removeValue(@PathVariable String id, @RequestBody Map<String, String> body) {
         String value = body.get("value");
-        if (value == null || value.isBlank()) {
+        if (value == null || value.trim().isEmpty()) {
             throw new IllegalArgumentException("Value is required");
         }
         Dimension updated = dimensionService.removeValue(id, value);

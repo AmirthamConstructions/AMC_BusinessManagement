@@ -3,7 +3,7 @@ package com.amc.backend.controller;
 import com.amc.backend.dto.ApiResponse;
 import com.amc.backend.model.PnlEntry;
 import com.amc.backend.service.PnlService;
-import jakarta.validation.Valid;
+import javax.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;

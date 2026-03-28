@@ -3,7 +3,7 @@ package com.amc.backend.controller;
 import com.amc.backend.dto.ApiResponse;
 import com.amc.backend.model.Material;
 import com.amc.backend.service.MaterialService;
-import jakarta.validation.Valid;
+import javax.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.format.annotation.DateTimeFormat;

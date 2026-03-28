@@ -86,7 +86,7 @@ public class DashboardService {
 
     private ChartData buildSiteChart(String title, List<Transaction> transactions) {
         Map<String, Double> siteData = transactions.stream()
-                .filter(t -> t.getSiteName() != null && !t.getSiteName().isBlank())
+                .filter(t -> t.getSiteName() != null && !t.getSiteName().trim().isEmpty())
                 .collect(Collectors.groupingBy(
                         Transaction::getSiteName,
                         Collectors.summingDouble(Transaction::getAmount)
