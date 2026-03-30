@@ -18,6 +18,7 @@ export class MaterialsComponent implements OnInit, AfterViewInit {
   displayedColumns = ['date', 'billNo', 'itemName', 'quantity', 'rate', 'amount', 'siteName', 'shopName', 'actions'];
   dataSource = new MatTableDataSource<Material>();
   searchText = '';
+  loading = false;
 
   @ViewChild(MatPaginator) paginator!: MatPaginator;
   @ViewChild(MatSort) sort!: MatSort;
@@ -31,14 +32,31 @@ export class MaterialsComponent implements OnInit, AfterViewInit {
     this.dataSource.sort = this.sort;
   }
 
-  loadData(): void { this.dataSource.data = this.matService.getAll(); }
+  loadData(): void {
+    this.loading = true;
+    this.matService.getAll(0, 500).subscribe({
+      next: (res) => {
+        this.dataSource.data = res.data;
+        this.loading = false;
+      },
+      error: () => {
+        this.snackBar.open('Failed to load materials', 'OK', { duration: 3000 });
+        this.loading = false;
+      }
+    });
+  }
+
   applyFilter(): void { this.dataSource.filter = this.searchText.trim().toLowerCase(); }
 
   deleteRow(id: string): void {
     if (confirm('Delete this material entry?')) {
-      this.matService.delete(id);
-      this.loadData();
-      this.snackBar.open('Material deleted', 'OK', { duration: 2000 });
+      this.matService.delete(id).subscribe({
+        next: () => {
+          this.loadData();
+          this.snackBar.open('Material deleted', 'OK', { duration: 2000 });
+        },
+        error: () => this.snackBar.open('Failed to delete material', 'OK', { duration: 3000 })
+      });
     }
   }
 }

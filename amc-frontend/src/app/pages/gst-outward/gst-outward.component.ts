@@ -17,6 +17,7 @@ export class GstOutwardComponent implements OnInit, AfterViewInit {
   displayedColumns = ['invoiceDate', 'invoiceNo', 'customerName', 'description', 'taxableValue', 'cgstAmount', 'sgstAmount', 'invoiceValue', 'actions'];
   dataSource = new MatTableDataSource<GstOutward>();
   searchText = '';
+  loading = false;
 
   @ViewChild(MatPaginator) paginator!: MatPaginator;
 
@@ -25,14 +26,31 @@ export class GstOutwardComponent implements OnInit, AfterViewInit {
   ngOnInit(): void { this.loadData(); }
   ngAfterViewInit(): void { this.dataSource.paginator = this.paginator; }
 
-  loadData(): void { this.dataSource.data = this.gstService.getAll(); }
+  loadData(): void {
+    this.loading = true;
+    this.gstService.getAll(0, 500).subscribe({
+      next: (res) => {
+        this.dataSource.data = res.data;
+        this.loading = false;
+      },
+      error: () => {
+        this.snackBar.open('Failed to load GST outward data', 'OK', { duration: 3000 });
+        this.loading = false;
+      }
+    });
+  }
+
   applyFilter(): void { this.dataSource.filter = this.searchText.trim().toLowerCase(); }
 
   deleteRow(id: string): void {
     if (confirm('Delete this invoice?')) {
-      this.gstService.delete(id);
-      this.loadData();
-      this.snackBar.open('Invoice deleted', 'OK', { duration: 2000 });
+      this.gstService.delete(id).subscribe({
+        next: () => {
+          this.loadData();
+          this.snackBar.open('Invoice deleted', 'OK', { duration: 2000 });
+        },
+        error: () => this.snackBar.open('Failed to delete invoice', 'OK', { duration: 3000 })
+      });
     }
   }
 }

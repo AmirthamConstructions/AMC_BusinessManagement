@@ -18,6 +18,7 @@ export class TransactionsComponent implements OnInit {
   displayedColumns = ['date', 'transactionId', 'siteName', 'type', 'nature', 'amount', 'party', 'modeOfPayment', 'actions'];
   dataSource = new MatTableDataSource<Transaction>();
   searchText = '';
+  loading = false;
 
   @ViewChild(MatPaginator) paginator!: MatPaginator;
   @ViewChild(MatSort) sort!: MatSort;
@@ -34,7 +35,17 @@ export class TransactionsComponent implements OnInit {
   }
 
   loadData(): void {
-    this.dataSource.data = this.txnService.getAll();
+    this.loading = true;
+    this.txnService.getAll(0, 500).subscribe({
+      next: (res) => {
+        this.dataSource.data = res.data;
+        this.loading = false;
+      },
+      error: () => {
+        this.snackBar.open('Failed to load transactions', 'OK', { duration: 3000 });
+        this.loading = false;
+      }
+    });
   }
 
   applyFilter(): void {
@@ -43,9 +54,13 @@ export class TransactionsComponent implements OnInit {
 
   deleteRow(id: string): void {
     if (confirm('Delete this transaction?')) {
-      this.txnService.delete(id);
-      this.loadData();
-      this.snackBar.open('Transaction deleted', 'OK', { duration: 2000 });
+      this.txnService.delete(id).subscribe({
+        next: () => {
+          this.loadData();
+          this.snackBar.open('Transaction deleted', 'OK', { duration: 2000 });
+        },
+        error: () => this.snackBar.open('Failed to delete', 'OK', { duration: 3000 })
+      });
     }
   }
 

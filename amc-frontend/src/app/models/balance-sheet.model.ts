@@ -5,4 +5,6 @@ export interface BalanceRow {
   liabilityAmount: number;
   asset: string;
   assetAmount: number;
+  company: string;
+  financialYear: string;
 }

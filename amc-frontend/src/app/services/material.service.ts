@@ -1,33 +1,41 @@
 import { Injectable } from '@angular/core';
+import { HttpClient, HttpParams } from '@angular/common/http';
+import { Observable, map } from 'rxjs';
+import { environment } from '../../environments/environment';
 import { Material } from '../models/material.model';
+import { ApiResponse, PaginationMeta } from '../models/api-response.model';
 
 @Injectable({ providedIn: 'root' })
 export class MaterialService {
 
-  private mockData: Material[] = [
-    { id: 'm1', date: '2026-03-20', billNo: 'BN-2026-0445', itemName: 'OPC Cement — 53 Grade', quantity: '50 bags', rate: 420, amount: 21000, siteId: 's1', siteName: 'Velachery Site', shopName: 'Sri Vinayaga Building Materials', notes: '' },
-    { id: 'm2', date: '2026-03-18', billNo: 'BN-2026-0440', itemName: 'River Sand — Fine', quantity: '2 loads', rate: 15000, amount: 30000, siteId: 's2', siteName: 'Adyar Site', shopName: 'Kaveri Sand Suppliers', notes: '' },
-    { id: 'm3', date: '2026-03-15', billNo: 'BN-2026-0435', itemName: 'TMT Steel 10mm', quantity: '2 tons', rate: 58000, amount: 116000, siteId: 's1', siteName: 'Velachery Site', shopName: 'Sri Lakshmi Steel Traders', notes: 'Delivered directly' },
-    { id: 'm4', date: '2026-03-12', billNo: 'BN-2026-0430', itemName: 'Bricks — Red Clay', quantity: '5000 nos', rate: 8, amount: 40000, siteId: 's3', siteName: 'T. Nagar Site', shopName: 'KVR Bricks', notes: '' },
-  ];
+  private url = `${environment.apiUrl}/materials`;
 
-  getAll(): Material[] { return this.mockData; }
+  constructor(private http: HttpClient) {}
 
-  create(mat: Partial<Material>): Material {
-    const newMat = { ...mat, id: 'm' + Date.now() } as Material;
-    this.mockData.unshift(newMat);
-    return newMat;
+  getAll(page = 0, size = 50, sortBy = 'date', direction = 'desc'): Observable<{ data: Material[]; meta?: PaginationMeta }> {
+    const params = new HttpParams()
+      .set('page', page).set('size', size)
+      .set('sortBy', sortBy).set('direction', direction);
+    return this.http.get<ApiResponse<Material[]>>(this.url, { params })
+      .pipe(map(res => ({ data: res.data, meta: res.meta })));
   }
 
-  update(id: string, mat: Partial<Material>): Material | undefined {
-    const idx = this.mockData.findIndex(m => m.id === id);
-    if (idx > -1) { this.mockData[idx] = { ...this.mockData[idx], ...mat }; return this.mockData[idx]; }
-    return undefined;
+  getById(id: string): Observable<Material> {
+    return this.http.get<ApiResponse<Material>>(`${this.url}/${id}`)
+      .pipe(map(res => res.data));
   }
 
-  delete(id: string): boolean {
-    const idx = this.mockData.findIndex(m => m.id === id);
-    if (idx > -1) { this.mockData.splice(idx, 1); return true; }
-    return false;
+  create(mat: Partial<Material>): Observable<Material> {
+    return this.http.post<ApiResponse<Material>>(this.url, mat)
+      .pipe(map(res => res.data));
+  }
+
+  update(id: string, mat: Partial<Material>): Observable<Material> {
+    return this.http.put<ApiResponse<Material>>(`${this.url}/${id}`, mat)
+      .pipe(map(res => res.data));
+  }
+
+  delete(id: string): Observable<void> {
+    return this.http.delete<void>(`${this.url}/${id}`);
   }
 }

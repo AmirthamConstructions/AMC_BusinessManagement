@@ -1,31 +1,43 @@
 import { Injectable } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
+import { Observable, map } from 'rxjs';
+import { environment } from '../../environments/environment';
 import { Dimension } from '../models/dimension.model';
+import { ApiResponse } from '../models/api-response.model';
 
 @Injectable({ providedIn: 'root' })
 export class DimensionService {
 
-  private mockData: Dimension[] = [
-    { id: 'd1', name: 'Income Head', values: ['Project Revenue', 'Site Payment', 'Advance Received'] },
-    { id: 'd2', name: 'Expense Head', values: ['Cement Purchase', 'Labour Wages', 'Steel Purchase', 'Transport', 'Sand', 'Plumbing Materials', 'Electrical'] },
-    { id: 'd3', name: 'Payment Mode', values: ['Cash', 'NEFT', 'UPI', 'Cheque', 'RTGS'] },
-    { id: 'd4', name: 'Company Account', values: ['HDFC Current A/C', 'SBI Savings A/C', 'ICICI Current A/C'] },
-  ];
+  private url = `${environment.apiUrl}/dimensions`;
 
-  getAll(): Dimension[] { return this.mockData; }
+  constructor(private http: HttpClient) {}
 
-  getByName(name: string): Dimension | undefined {
-    return this.mockData.find(d => d.name === name);
+  getAll(): Observable<Dimension[]> {
+    return this.http.get<ApiResponse<Dimension[]>>(this.url)
+      .pipe(map(res => res.data));
   }
 
-  addValue(name: string, value: string): boolean {
-    const dim = this.mockData.find(d => d.name === name);
-    if (dim && !dim.values.includes(value)) { dim.values.push(value); return true; }
-    return false;
+  getByName(name: string): Observable<Dimension> {
+    return this.http.get<ApiResponse<Dimension>>(`${this.url}/name/${name}`)
+      .pipe(map(res => res.data));
   }
 
-  removeValue(name: string, value: string): boolean {
-    const dim = this.mockData.find(d => d.name === name);
-    if (dim) { dim.values = dim.values.filter(v => v !== value); return true; }
-    return false;
+  create(dimension: Partial<Dimension>): Observable<Dimension> {
+    return this.http.post<ApiResponse<Dimension>>(this.url, dimension)
+      .pipe(map(res => res.data));
+  }
+
+  addValue(id: string, value: string): Observable<Dimension> {
+    return this.http.patch<ApiResponse<Dimension>>(`${this.url}/${id}/add-value`, { value })
+      .pipe(map(res => res.data));
+  }
+
+  removeValue(id: string, value: string): Observable<Dimension> {
+    return this.http.patch<ApiResponse<Dimension>>(`${this.url}/${id}/remove-value`, { value })
+      .pipe(map(res => res.data));
+  }
+
+  delete(id: string): Observable<void> {
+    return this.http.delete<void>(`${this.url}/${id}`);
   }
 }

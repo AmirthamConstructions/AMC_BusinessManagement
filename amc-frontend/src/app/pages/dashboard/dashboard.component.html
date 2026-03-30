@@ -2,6 +2,14 @@
   <h2>Dashboard</h2>
 </div>
 
+@if (loading) {
+  <div class="loading-container"><mat-spinner diameter="48"></mat-spinner></div>
+}
+@if (error) {
+  <div class="error-message">{{ error }}</div>
+}
+
+@if (data) {
 <!-- KPI Cards -->
 <div class="kpi-grid">
   <mat-card class="kpi-card revenue">
@@ -111,3 +119,4 @@
     </mat-card-content>
   </mat-card>
 </div>
+}

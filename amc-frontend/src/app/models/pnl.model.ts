@@ -5,4 +5,6 @@ export interface PnlEntry {
   incomeAmount: number;
   expense: string;
   expenseAmount: number;
+  company: string;
+  financialYear: string;
 }

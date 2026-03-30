@@ -12,11 +12,28 @@ import { DashboardData } from '../../models/dashboard.model';
 })
 export class DashboardComponent implements OnInit {
   data!: DashboardData;
+  loading = false;
+  error = '';
 
   constructor(private dashboardService: DashboardService) {}
 
   ngOnInit(): void {
-    this.data = this.dashboardService.getData();
+    this.loadData();
+  }
+
+  loadData(): void {
+    this.loading = true;
+    this.error = '';
+    this.dashboardService.getData().subscribe({
+      next: (data) => {
+        this.data = data;
+        this.loading = false;
+      },
+      error: () => {
+        this.error = 'Failed to load dashboard data';
+        this.loading = false;
+      }
+    });
   }
 
   // Format number as Indian currency string

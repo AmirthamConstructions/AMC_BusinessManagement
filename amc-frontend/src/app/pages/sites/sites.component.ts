@@ -17,6 +17,7 @@ export class SitesComponent implements OnInit, AfterViewInit {
   displayedColumns = ['siteId', 'name', 'clientName', 'company', 'contactNumber', 'isActive', 'actions'];
   dataSource = new MatTableDataSource<Site>();
   searchText = '';
+  loading = false;
 
   @ViewChild(MatPaginator) paginator!: MatPaginator;
 
@@ -26,15 +27,31 @@ export class SitesComponent implements OnInit, AfterViewInit {
 
   ngAfterViewInit(): void { this.dataSource.paginator = this.paginator; }
 
-  loadData(): void { this.dataSource.data = this.siteService.getAll(); }
+  loadData(): void {
+    this.loading = true;
+    this.siteService.getAll().subscribe({
+      next: (data) => {
+        this.dataSource.data = data;
+        this.loading = false;
+      },
+      error: () => {
+        this.snackBar.open('Failed to load sites', 'OK', { duration: 3000 });
+        this.loading = false;
+      }
+    });
+  }
 
   applyFilter(): void { this.dataSource.filter = this.searchText.trim().toLowerCase(); }
 
   deleteRow(id: string): void {
     if (confirm('Delete this site?')) {
-      this.siteService.delete(id);
-      this.loadData();
-      this.snackBar.open('Site deleted', 'OK', { duration: 2000 });
+      this.siteService.delete(id).subscribe({
+        next: () => {
+          this.loadData();
+          this.snackBar.open('Site deleted', 'OK', { duration: 2000 });
+        },
+        error: () => this.snackBar.open('Failed to delete site', 'OK', { duration: 3000 })
+      });
     }
   }
 }

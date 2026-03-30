@@ -6,6 +6,11 @@ export interface Site {
   address: string;
   contactNumber: string;
   company: 'Main' | 'GST';
+  quotationAmount: number;
+  dateOfStart: string;
+  dueDate: string;
+  profit: number;
+  profitDate: string;
   expenseHead: string;
   incomeHead: string;
   paymentMode: string;
