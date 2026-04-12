@@ -1,0 +1,367 @@
+<!-- ====================== LIST VIEW ====================== -->
+@if (view === 'list') {
+  <div class="page-header">
+    <h2>Invoices</h2>
+    <button mat-raised-button color="primary" (click)="openNewInvoice()">
+      <mat-icon>add</mat-icon> New Invoice
+    </button>
+  </div>
+
+  <mat-card>
+    <mat-card-content>
+      @if (listLoading) {
+        <div class="loading-container"><mat-spinner diameter="40"></mat-spinner></div>
+      }
+
+      <div class="table-responsive">
+        <table mat-table [dataSource]="dataSource" class="full-width">
+          <ng-container matColumnDef="invoiceNo">
+            <th mat-header-cell *matHeaderCellDef>Invoice No</th>
+            <td mat-cell *matCellDef="let row" class="mono">{{ row.invoiceNo }}</td>
+          </ng-container>
+          <ng-container matColumnDef="invoiceDate">
+            <th mat-header-cell *matHeaderCellDef>Date</th>
+            <td mat-cell *matCellDef="let row">{{ row.invoiceDate | date:'dd-MMM-yyyy' }}</td>
+          </ng-container>
+          <ng-container matColumnDef="customerName">
+            <th mat-header-cell *matHeaderCellDef>Customer</th>
+            <td mat-cell *matCellDef="let row">{{ row.customerName }}</td>
+          </ng-container>
+          <ng-container matColumnDef="nameOfWork">
+            <th mat-header-cell *matHeaderCellDef>Work</th>
+            <td mat-cell *matCellDef="let row">{{ row.nameOfWork }}</td>
+          </ng-container>
+          <ng-container matColumnDef="grandTotal">
+            <th mat-header-cell *matHeaderCellDef>Total</th>
+            <td mat-cell *matCellDef="let row" class="amount total">{{ formatCurrency(row.grandTotal) }}</td>
+          </ng-container>
+          <ng-container matColumnDef="status">
+            <th mat-header-cell *matHeaderCellDef>Status</th>
+            <td mat-cell *matCellDef="let row">
+              <span class="status-chip" [attr.data-status]="row.status">{{ row.status }}</span>
+            </td>
+          </ng-container>
+          <ng-container matColumnDef="actions">
+            <th mat-header-cell *matHeaderCellDef>Actions</th>
+            <td mat-cell *matCellDef="let row">
+              <button mat-icon-button matTooltip="Preview" color="primary" (click)="openPreview(row)"><mat-icon>visibility</mat-icon></button>
+              <button mat-icon-button matTooltip="Edit" (click)="openEditInvoice(row)"><mat-icon>edit</mat-icon></button>
+              <button mat-icon-button matTooltip="Delete" color="warn" (click)="deleteInvoice(row.id)"><mat-icon>delete</mat-icon></button>
+            </td>
+          </ng-container>
+          <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+          <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+        </table>
+      </div>
+      <mat-paginator [pageSizeOptions]="[10, 25]" showFirstLastButtons></mat-paginator>
+    </mat-card-content>
+  </mat-card>
+}
+
+<!-- ====================== FORM VIEW ====================== -->
+@if (view === 'form') {
+  <div class="page-header">
+    <h2>{{ editingId ? 'Edit Invoice' : 'New Invoice' }}</h2>
+    <button mat-button (click)="goToList()"><mat-icon>arrow_back</mat-icon> Back to list</button>
+  </div>
+
+  <form [formGroup]="invoiceForm" (ngSubmit)="saveInvoice()" class="invoice-form">
+    <!-- Invoice Details Card -->
+    <mat-card class="form-card">
+      <mat-card-header><mat-card-title>Invoice Details</mat-card-title></mat-card-header>
+      <mat-card-content>
+        <div class="form-row">
+          <mat-form-field appearance="outline" class="form-field">
+            <mat-label>Invoice No</mat-label>
+            <input matInput formControlName="invoiceNo" readonly>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="form-field">
+            <mat-label>Invoice Date</mat-label>
+            <input matInput [matDatepicker]="dp" formControlName="invoiceDate">
+            <mat-datepicker-toggle matIconSuffix [for]="dp"></mat-datepicker-toggle>
+            <mat-datepicker #dp></mat-datepicker>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="form-field">
+            <mat-label>Name of Work</mat-label>
+            <input matInput formControlName="nameOfWork" placeholder="e.g. Painting Works">
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="form-field">
+            <mat-label>Status</mat-label>
+            <mat-select formControlName="status">
+              <mat-option value="DRAFT">Draft</mat-option>
+              <mat-option value="SENT">Sent</mat-option>
+              <mat-option value="PAID">Paid</mat-option>
+              <mat-option value="CANCELLED">Cancelled</mat-option>
+            </mat-select>
+          </mat-form-field>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <!-- Customer Card -->
+    <mat-card class="form-card">
+      <mat-card-header>
+        <mat-card-title>Customer Details</mat-card-title>
+        <mat-card-subtitle>Select existing or enter new customer</mat-card-subtitle>
+      </mat-card-header>
+      <mat-card-content>
+        <!-- Existing customer selector -->
+        @if (existingCustomers.length) {
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>Select Existing Customer</mat-label>
+            <mat-select (selectionChange)="onCustomerSelected($event.value)">
+              <mat-option>-- Enter New Customer --</mat-option>
+              @for (c of existingCustomers; track c.name) {
+                <mat-option [value]="c">{{ c.name }} {{ c.gstin ? '(' + c.gstin + ')' : '' }}</mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+        }
+
+        <div class="form-row">
+          <mat-form-field appearance="outline" class="form-field-wide">
+            <mat-label>Customer / Company Name</mat-label>
+            <input matInput formControlName="customerName" placeholder="M/s. ...">
+            <mat-error>Required</mat-error>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="form-field">
+            <mat-label>GSTIN</mat-label>
+            <input matInput formControlName="customerGSTIN" placeholder="33XXXXXXXXX1ZX">
+          </mat-form-field>
+        </div>
+
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Address</mat-label>
+          <textarea matInput formControlName="customerAddress" rows="2" placeholder="Full address"></textarea>
+        </mat-form-field>
+
+        <div class="form-row">
+          <mat-form-field appearance="outline" class="form-field">
+            <mat-label>State</mat-label>
+            <input matInput formControlName="customerState" placeholder="Tamil Nadu">
+          </mat-form-field>
+          <mat-form-field appearance="outline" class="form-field">
+            <mat-label>Pincode</mat-label>
+            <input matInput formControlName="customerPincode" placeholder="600001">
+          </mat-form-field>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <!-- Line Items Card -->
+    <mat-card class="form-card">
+      <mat-card-header>
+        <mat-card-title>Description of Work</mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        <div formArrayName="lineItems">
+          @for (item of lineItems.controls; track $index) {
+            <div [formGroupName]="$index" class="line-item-row">
+              <span class="line-sno">{{ $index + 1 }}.</span>
+              <mat-form-field appearance="outline" class="line-desc">
+                <mat-label>Description</mat-label>
+                <textarea matInput formControlName="description" rows="2" placeholder="Describe the work"></textarea>
+                <mat-error>Required</mat-error>
+              </mat-form-field>
+              <mat-form-field appearance="outline" class="line-amount">
+                <mat-label>Amount (₹)</mat-label>
+                <input matInput type="number" formControlName="amount" min="0">
+                <mat-error>Required</mat-error>
+              </mat-form-field>
+              <button mat-icon-button color="warn" type="button" (click)="removeLineItem($index)" [disabled]="lineItems.length === 1" matTooltip="Remove">
+                <mat-icon>remove_circle</mat-icon>
+              </button>
+            </div>
+          }
+        </div>
+        <button mat-stroked-button color="primary" type="button" (click)="addLineItem()" class="add-item-btn">
+          <mat-icon>add</mat-icon> Add Line Item
+        </button>
+      </mat-card-content>
+    </mat-card>
+
+    <!-- Tax & Totals Card -->
+    <mat-card class="form-card">
+      <mat-card-header><mat-card-title>Tax & Totals</mat-card-title></mat-card-header>
+      <mat-card-content>
+        <div class="form-row">
+          <mat-form-field appearance="outline" class="form-field-sm">
+            <mat-label>CGST %</mat-label>
+            <input matInput type="number" formControlName="cgstPercent" min="0">
+          </mat-form-field>
+          <mat-form-field appearance="outline" class="form-field-sm">
+            <mat-label>SGST %</mat-label>
+            <input matInput type="number" formControlName="sgstPercent" min="0">
+          </mat-form-field>
+        </div>
+
+        <div class="totals-summary">
+          <div class="total-row"><span>Sub Total</span><span class="amount">{{ formatCurrency(subTotal) }}</span></div>
+          <div class="total-row"><span>CGST &#64; {{ invoiceForm.value.cgstPercent }}%</span><span class="amount">{{ formatCurrency(cgstAmount) }}</span></div>
+          <div class="total-row"><span>SGST &#64; {{ invoiceForm.value.sgstPercent }}%</span><span class="amount">{{ formatCurrency(sgstAmount) }}</span></div>
+          <div class="total-row"><span>Round Off</span><span class="amount">{{ roundOff >= 0 ? '' : '(-)' }} {{ formatCurrency(Math.abs(roundOff)) }}</span></div>
+          <mat-divider></mat-divider>
+          <div class="total-row grand"><span>Grand Total</span><span class="amount">{{ formatCurrency(grandTotal) }}</span></div>
+          <div class="amount-words">{{ numberToWords(grandTotal) }}</div>
+        </div>
+
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Notes (optional)</mat-label>
+          <textarea matInput formControlName="notes" rows="2"></textarea>
+        </mat-form-field>
+      </mat-card-content>
+    </mat-card>
+
+    <div class="form-actions">
+      <button mat-button type="button" (click)="goToList()">Cancel</button>
+      <button mat-raised-button color="primary" type="submit" [disabled]="saving">
+        @if (saving) { <mat-spinner diameter="20" class="btn-spinner"></mat-spinner> }
+        {{ editingId ? 'Update' : 'Save' }} & Preview
+      </button>
+    </div>
+  </form>
+}
+
+<!-- ====================== PREVIEW VIEW ====================== -->
+@if (view === 'preview') {
+  <div class="page-header">
+    <h2>Invoice Preview</h2>
+    <div class="header-actions">
+      <button mat-button (click)="goToList()"><mat-icon>arrow_back</mat-icon> Back</button>
+      <button mat-button (click)="openEditInvoice(previewInvoice)"><mat-icon>edit</mat-icon> Edit</button>
+      <button mat-raised-button color="primary" (click)="downloadPdf()" [disabled]="generatingPdf">
+        @if (generatingPdf) { <mat-spinner diameter="20" class="btn-spinner"></mat-spinner> }
+        <mat-icon>picture_as_pdf</mat-icon> Download PDF
+      </button>
+    </div>
+  </div>
+
+  <!-- Printable Invoice -->
+  <div class="invoice-paper-wrapper">
+    <div class="invoice-paper" #invoicePrint>
+      <!-- Header -->
+      <div class="inv-header">
+        <div class="inv-logo">
+          <img [src]="company.logo" alt="Logo" crossorigin="anonymous">
+        </div>
+        <div class="inv-company">
+          <h1>{{ company.name }}</h1>
+          <p>{{ company.address }}</p>
+          <p>
+            <span class="inv-icon">📞</span> {{ company.phone }}
+            &nbsp;&nbsp;
+            <span class="inv-icon">✉</span> {{ company.email }}
+          </p>
+          <p><strong>GSTIN:</strong> {{ company.gstin }}</p>
+        </div>
+      </div>
+
+      <div class="inv-title-bar">TAX INVOICE</div>
+
+      <!-- Customer & Invoice Info Row -->
+      <div class="inv-info-grid">
+        <div class="inv-customer">
+          <p class="inv-label">To</p>
+          <p class="inv-bold">M/s. {{ previewInvoice.customerName }}</p>
+          <p>{{ previewInvoice.customerAddress }}</p>
+          @if (previewInvoice.customerState) {
+            <p>{{ previewInvoice.customerState }}{{ previewInvoice.customerPincode ? ', ' + previewInvoice.customerPincode : '' }}</p>
+          }
+          @if (previewInvoice.customerGSTIN) {
+            <p><strong>GSTIN:</strong> {{ previewInvoice.customerGSTIN }}</p>
+          }
+        </div>
+        <div class="inv-meta">
+          <table class="inv-meta-table">
+            <tr><td class="inv-label">Name of Work</td><td class="inv-bold">{{ previewInvoice.nameOfWork }}</td></tr>
+            <tr><td class="inv-label">Invoice No</td><td class="inv-bold">{{ previewInvoice.invoiceNo }}</td></tr>
+            <tr><td class="inv-label">Date</td><td class="inv-bold">{{ previewInvoice.invoiceDate | date:'dd-MMM-yyyy' }}</td></tr>
+          </table>
+        </div>
+      </div>
+
+      <!-- Items Table -->
+      <table class="inv-table">
+        <thead>
+          <tr>
+            <th class="sno-col">S.No.</th>
+            <th>Description of Work</th>
+            <th class="amt-col">Amount</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (item of previewInvoice.lineItems; track item.sNo) {
+            <tr>
+              <td class="center">{{ item.sNo }}</td>
+              <td class="desc-cell">{{ item.description }}</td>
+              <td class="amount-cell">{{ formatCurrency(item.amount) }}</td>
+            </tr>
+          }
+          <!-- Fill empty rows for consistent height -->
+          @for (i of [].constructor(Math.max(0, 4 - previewInvoice.lineItems.length)); track $index) {
+            <tr class="empty-row"><td>&nbsp;</td><td></td><td></td></tr>
+          }
+        </tbody>
+        <tfoot>
+          <tr class="subtotal-row">
+            <td></td>
+            <td class="right-align"><strong>Sub Total</strong></td>
+            <td class="amount-cell"><strong>{{ formatCurrency(previewInvoice.subTotal) }}</strong></td>
+          </tr>
+          <tr>
+            <td></td>
+            <td class="right-align">CGST &#64; {{ previewInvoice.cgstPercent }}%</td>
+            <td class="amount-cell">{{ formatCurrency(previewInvoice.cgstAmount) }}</td>
+          </tr>
+          <tr>
+            <td></td>
+            <td class="right-align">SGST &#64; {{ previewInvoice.sgstPercent }}%</td>
+            <td class="amount-cell">{{ formatCurrency(previewInvoice.sgstAmount) }}</td>
+          </tr>
+          <tr>
+            <td></td>
+            <td class="right-align">Round Off</td>
+            <td class="amount-cell">{{ previewInvoice.roundOff >= 0 ? '' : '(-)' }} {{ formatCurrency(previewInvoice.roundOff >= 0 ? previewInvoice.roundOff : -previewInvoice.roundOff) }}</td>
+          </tr>
+          <tr class="grand-total-row">
+            <td></td>
+            <td class="right-align"><strong>Grand Total</strong></td>
+            <td class="amount-cell"><strong>{{ formatCurrency(previewInvoice.grandTotal) }}</strong></td>
+          </tr>
+        </tfoot>
+      </table>
+
+      <!-- Amount in words -->
+      <div class="inv-words-row">
+        <span class="inv-label">Amount Chargeable (in words)</span>
+        <span class="inv-words-spacer"></span>
+        <span class="inv-eoe">E &amp; O.E</span>
+      </div>
+      <div class="inv-words-text">{{ previewInvoice.amountInWords }}</div>
+
+      <!-- Bank & Signature -->
+      <div class="inv-footer-grid">
+        <div class="inv-bank">
+          <p class="inv-label"><strong>Bank Account Details</strong></p>
+          <table class="inv-bank-table">
+            <tr><td>A/C Name:</td><td>{{ company.bank.accountName }}</td></tr>
+            <tr><td>Bank Name:</td><td>{{ company.bank.bankName }}</td></tr>
+            <tr><td>A/C No:</td><td>{{ company.bank.accountNo }}</td></tr>
+            <tr><td>IFSC:</td><td>{{ company.bank.ifsc }}</td></tr>
+            <tr><td>Branch:</td><td>{{ company.bank.branch }}</td></tr>
+          </table>
+        </div>
+        <div class="inv-signature">
+          <p class="inv-bold">For {{ company.name }}</p>
+          <div class="sig-space"></div>
+          <p>Authorized Signatory</p>
+          <p class="inv-bold">{{ company.authorizedSignatory }}</p>
+        </div>
+      </div>
+    </div>
+  </div>
+}

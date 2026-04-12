@@ -25,6 +25,7 @@ export const routes: Routes = [
       { path: 'gst-outward', loadComponent: () => import('./pages/gst-outward/gst-outward.component').then(m => m.GstOutwardComponent) },
       { path: 'gst-inward', loadComponent: () => import('./pages/gst-inward/gst-inward.component').then(m => m.GstInwardComponent) },
       { path: 'materials', loadComponent: () => import('./pages/materials/materials.component').then(m => m.MaterialsComponent) },
+      { path: 'invoices', loadComponent: () => import('./pages/invoices/invoices.component').then(m => m.InvoicesComponent) },
       { path: 'dimensions', loadComponent: () => import('./pages/dimensions/dimensions.component').then(m => m.DimensionsComponent) },
     ]
   },

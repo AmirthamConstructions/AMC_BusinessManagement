@@ -1,0 +1,47 @@
+Company Info:
+
+Logo = amc-frontend/src/assets/logo.png
+AMIRTHAM CONSTRUCTIONS
+1A, Subramani Nagar, Keelkattalai, Chennai 600117
+ +91 9092 212121      amirthamconstructions@yahoo.com
+GSTIN: 33ACKFA9096N1ZO
+
+
+Customer info:
+
+To
+M/s. INNOVATION DEVELOPERS
+51, DEVIKAPURAM, MADANUR POST AMBUR TALUK, Devikapuram, 
+Tirupathur, Tamil Nadu, 635804
+GSTIN: 33CIBPD2977A1ZT
+
+Invoice Details:
+
+Name of work	Painting Works
+Invoice No	AMC/25-26/006
+Date	26-Feb-2026
+S.No.	Description of Work	Amount
+1	Interior painting 
+• Exterior Painting works– 1 coat Primer, 2 coats Paint	₹1,27,118.64
+	Sub Total	₹1,27,118.64
+	CGST @ 9%	₹11,440.68
+	SGST @ 9%	₹11,440.68
+	Round Off	(-) ₹0.00
+	Grand Total	₹1,50,000.00
+Amount Chargeable (in words)                                                                                        E & O.E
+Rupees One Lakh and Fifty Thousand Only
+
+
+Bank Account Details
+A/C Name: Amirtham Constructions
+Bank Name: STATE BANK OF INDIA
+A/C No: 44427007958
+IFSC: SBIN0016545
+Branch: KILKATTALAI
+For AMIRTHAM CONSTRUCTIONS
+
+
+Authorized signatory
+Tharun
+
+
