@@ -6,6 +6,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.stereotype.Repository;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
@@ -17,4 +18,5 @@ public interface GstOutwardRepository extends MongoRepository<GstOutward, String
     Page<GstOutward> findByFilingMonth(String filingMonth, Pageable pageable);
     List<GstOutward> findByYearAndInvoiceMonth(String year, String invoiceMonth);
     Page<GstOutward> findByCustomerGSTIN(String customerGSTIN, Pageable pageable);
+    List<GstOutward> findByInvoiceDateBetween(LocalDate start, LocalDate end);
 }

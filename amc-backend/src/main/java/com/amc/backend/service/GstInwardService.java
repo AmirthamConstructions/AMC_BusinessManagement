@@ -1,5 +1,6 @@
 package com.amc.backend.service;
 
+import com.amc.backend.dto.Gst2bUploadResult;
 import com.amc.backend.dto.PaginationMeta;
 import com.amc.backend.exception.ResourceNotFoundException;
 import com.amc.backend.model.GstInward;
@@ -10,8 +11,11 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -19,6 +23,7 @@ import java.util.List;
 public class GstInwardService {
 
     private final GstInwardRepository gstInwardRepository;
+    private final GstExcelService gstExcelService;
 
     public Page<GstInward> findAll(int page, int size, String sortBy, String direction) {
         Sort sort = direction.equalsIgnoreCase("asc")
@@ -85,6 +90,57 @@ public class GstInwardService {
             throw new ResourceNotFoundException("GstInward", "id", id);
         }
         gstInwardRepository.deleteById(id);
+    }
+
+    // ── Upload Excel file and import rows ────────────────────────────────────
+    public Gst2bUploadResult uploadExcel(MultipartFile file) throws IOException {
+        List<GstInward> parsed = gstExcelService.parseInwardExcel(file.getInputStream());
+
+        int imported = 0;
+        int skipped = 0;
+        List<String> skippedReasons = new ArrayList<>();
+        List<String> errorMessages = new ArrayList<>();
+
+        for (int i = 0; i < parsed.size(); i++) {
+            GstInward entry = parsed.get(i);
+            try {
+                // Check for duplicate
+                if (entry.getPurchaseBillNo() != null && entry.getInvoiceDate() != null
+                        && gstInwardRepository.existsByPurchaseBillNoAndInvoiceDate(
+                        entry.getPurchaseBillNo(), entry.getInvoiceDate())) {
+                    skipped++;
+                    skippedReasons.add("Row " + (i + 1) + ": Duplicate bill " + entry.getPurchaseBillNo()
+                            + " dated " + entry.getInvoiceDate());
+                    continue;
+                }
+                gstInwardRepository.save(entry);
+                imported++;
+            } catch (Exception e) {
+                errorMessages.add("Row " + (i + 1) + ": " + e.getMessage());
+            }
+        }
+
+        return Gst2bUploadResult.builder()
+                .totalRows(parsed.size())
+                .importedCount(imported)
+                .skippedCount(skipped)
+                .errorCount(errorMessages.size())
+                .skippedReasons(skippedReasons)
+                .errorMessages(errorMessages)
+                .build();
+    }
+
+    // ── Export to Excel ──────────────────────────────────────────────────────
+    public byte[] exportToExcel(String year, String month) throws IOException {
+        List<GstInward> entries;
+        if (year != null && month != null) {
+            entries = gstInwardRepository.findByYearAndInvoiceMonth(year, month);
+        } else if (year != null) {
+            entries = gstInwardRepository.findByYear(year, PageRequest.of(0, 10000, Sort.by("invoiceDate").ascending())).getContent();
+        } else {
+            entries = gstInwardRepository.findAll(Sort.by("invoiceDate").ascending());
+        }
+        return gstExcelService.exportInwardToExcel(entries);
     }
 
     public PaginationMeta buildMeta(Page<?> page) {

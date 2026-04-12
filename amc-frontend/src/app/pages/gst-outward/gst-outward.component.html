@@ -1,65 +1,290 @@
+<!-- ═══════════════════════════════════════════════════════════════════════════ -->
+<!-- HEADER: Title + Action Buttons                                           -->
+<!-- ═══════════════════════════════════════════════════════════════════════════ -->
 <div class="page-header">
-  <h2>GST-1R Outward (Sales)</h2>
-  <button mat-raised-button color="primary"><mat-icon>add</mat-icon> Add Invoice</button>
+  <h2>GST-1 Outward (Sales)</h2>
+  <div class="header-actions">
+    <button mat-raised-button color="accent" (click)="exportExcel()" [disabled]="exporting">
+      <mat-icon>download</mat-icon>
+      @if (exporting) { Exporting... } @else { Export Excel }
+    </button>
+    <button mat-raised-button color="primary" (click)="openAddForm()">
+      <mat-icon>add</mat-icon> Add Invoice
+    </button>
+  </div>
 </div>
 
+<!-- ═══════════════════════════════════════════════════════════════════════════ -->
+<!-- ADD / EDIT FORM (slides open when showForm is true)                       -->
+<!-- ═══════════════════════════════════════════════════════════════════════════ -->
+@if (showForm) {
+  <mat-card class="form-card">
+    <mat-card-header>
+      <mat-card-title>
+        @if (editingId) { Edit Invoice } @else { Add New Invoice }
+      </mat-card-title>
+      <span class="spacer"></span>
+      <button mat-icon-button (click)="cancelForm()" matTooltip="Close">
+        <mat-icon>close</mat-icon>
+      </button>
+    </mat-card-header>
+    <mat-card-content>
+      <div class="form-grid">
+        <!-- Row 1: Invoice No, Date, Customer -->
+        <mat-form-field appearance="outline">
+          <mat-label>Invoice No *</mat-label>
+          <input matInput [(ngModel)]="formData.invoiceNo" placeholder="e.g. AMC/25-26/001">
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Invoice Date *</mat-label>
+          <input matInput [matDatepicker]="dp" [(ngModel)]="formData.invoiceDate" (dateChange)="onDateChange()">
+          <mat-datepicker-toggle matSuffix [for]="dp"></mat-datepicker-toggle>
+          <mat-datepicker #dp></mat-datepicker>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Customer Name *</mat-label>
+          <input matInput [(ngModel)]="formData.customerName">
+        </mat-form-field>
+
+        <!-- Row 2: GSTIN, Place of Supply, Description -->
+        <mat-form-field appearance="outline">
+          <mat-label>Customer GSTIN</mat-label>
+          <input matInput [(ngModel)]="formData.customerGSTIN" placeholder="15-char GSTIN" maxlength="15">
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Place of Supply</mat-label>
+          <input matInput [(ngModel)]="formData.placeOfSupply">
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Description</mat-label>
+          <input matInput [(ngModel)]="formData.description">
+        </mat-form-field>
+
+        <!-- Row 3: Taxable Value, CGST %, SGST % (auto-compute) -->
+        <mat-form-field appearance="outline">
+          <mat-label>Taxable Value (₹) *</mat-label>
+          <input matInput type="number" [(ngModel)]="formData.taxableValue" (ngModelChange)="onTaxableChange()">
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>CGST %</mat-label>
+          <input matInput type="number" [(ngModel)]="formData.cgstPercent" (ngModelChange)="onTaxableChange()">
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>SGST %</mat-label>
+          <input matInput type="number" [(ngModel)]="formData.sgstPercent" (ngModelChange)="onTaxableChange()">
+        </mat-form-field>
+
+        <!-- Row 4: Computed read-only values -->
+        <mat-form-field appearance="outline">
+          <mat-label>CGST Amount</mat-label>
+          <input matInput type="number" [(ngModel)]="formData.cgstAmount" readonly>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>SGST Amount</mat-label>
+          <input matInput type="number" [(ngModel)]="formData.sgstAmount" readonly>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Invoice Value (₹)</mat-label>
+          <input matInput type="number" [(ngModel)]="formData.invoiceValue" readonly class="total-field">
+        </mat-form-field>
+
+        <!-- Row 5: FY, Month, Remarks -->
+        <mat-form-field appearance="outline">
+          <mat-label>Financial Year</mat-label>
+          <mat-select [(ngModel)]="formData.year">
+            @for (y of years; track y) {
+              <mat-option [value]="y">{{ y }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Invoice Month</mat-label>
+          <mat-select [(ngModel)]="formData.invoiceMonth">
+            @for (m of months; track m) {
+              <mat-option [value]="m">{{ m }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Remarks</mat-label>
+          <input matInput [(ngModel)]="formData.remarks">
+        </mat-form-field>
+      </div>
+
+      <div class="form-actions">
+        <button mat-button (click)="cancelForm()">Cancel</button>
+        <button mat-raised-button color="primary" (click)="saveForm()">
+          <mat-icon>save</mat-icon>
+          @if (editingId) { Update Invoice } @else { Save Invoice }
+        </button>
+      </div>
+    </mat-card-content>
+  </mat-card>
+}
+
+<!-- ═══════════════════════════════════════════════════════════════════════════ -->
+<!-- SUMMARY KPI CARDS (reflect the currently filtered data)                   -->
+<!-- ═══════════════════════════════════════════════════════════════════════════ -->
+<div class="summary-cards">
+  <mat-card class="summary-card">
+    <div class="summary-value">{{ invoiceCount }}</div>
+    <div class="summary-label">Invoices</div>
+  </mat-card>
+  <mat-card class="summary-card">
+    <div class="summary-value">{{ formatCurrency(totalTaxable) }}</div>
+    <div class="summary-label">Total Taxable</div>
+  </mat-card>
+  <mat-card class="summary-card">
+    <div class="summary-value">{{ formatCurrency(totalCgst) }}</div>
+    <div class="summary-label">Total CGST</div>
+  </mat-card>
+  <mat-card class="summary-card">
+    <div class="summary-value">{{ formatCurrency(totalSgst) }}</div>
+    <div class="summary-label">Total SGST</div>
+  </mat-card>
+  <mat-card class="summary-card total">
+    <div class="summary-value">{{ formatCurrency(totalValue) }}</div>
+    <div class="summary-label">Total Invoice Value</div>
+  </mat-card>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════════════ -->
+<!-- FILTER ROW: Year + Month dropdowns filter the TABLE (not just export)     -->
+<!-- ═══════════════════════════════════════════════════════════════════════════ -->
+<div class="filter-row">
+  <mat-form-field appearance="outline" class="filter-field">
+    <mat-label>Financial Year</mat-label>
+    <mat-select [(ngModel)]="filterYear" (selectionChange)="applyAllFilters()">
+      <mat-option value="">All Years</mat-option>
+      @for (y of years; track y) {
+        <mat-option [value]="y">{{ y }}</mat-option>
+      }
+    </mat-select>
+  </mat-form-field>
+
+  <mat-form-field appearance="outline" class="filter-field">
+    <mat-label>Month</mat-label>
+    <mat-select [(ngModel)]="filterMonth" (selectionChange)="applyAllFilters()">
+      <mat-option value="">All Months</mat-option>
+      @for (m of months; track m) {
+        <mat-option [value]="m">{{ m }}</mat-option>
+      }
+    </mat-select>
+  </mat-form-field>
+
+  <mat-form-field appearance="outline" class="search-field">
+    <mat-label>Search invoices</mat-label>
+    <input matInput [(ngModel)]="searchText" (keyup)="onSearchChange()" placeholder="Search by name, GSTIN, invoice no...">
+    <mat-icon matSuffix>search</mat-icon>
+  </mat-form-field>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════════════ -->
+<!-- DATA TABLE                                                                 -->
+<!-- ═══════════════════════════════════════════════════════════════════════════ -->
 <mat-card>
   <mat-card-content>
-    <mat-form-field appearance="outline" class="search-field">
-      <mat-label>Search invoices</mat-label>
-      <input matInput [(ngModel)]="searchText" (keyup)="applyFilter()">
-      <mat-icon matSuffix>search</mat-icon>
-    </mat-form-field>
-
     @if (loading) {
       <div class="loading-container"><mat-spinner diameter="40"></mat-spinner></div>
     }
 
     <div class="table-responsive">
-      <table mat-table [dataSource]="dataSource" class="full-width">
+      <table mat-table [dataSource]="dataSource" matSort (matSortChange)="computeSummary(dataSource.filteredData)" class="full-width">
+
+        <!-- Date -->
         <ng-container matColumnDef="invoiceDate">
-          <th mat-header-cell *matHeaderCellDef>Date</th>
+          <th mat-header-cell *matHeaderCellDef mat-sort-header>Date</th>
           <td mat-cell *matCellDef="let row">{{ row.invoiceDate }}</td>
         </ng-container>
+
+        <!-- Invoice No -->
         <ng-container matColumnDef="invoiceNo">
-          <th mat-header-cell *matHeaderCellDef>Invoice No</th>
+          <th mat-header-cell *matHeaderCellDef mat-sort-header>Invoice No</th>
           <td mat-cell *matCellDef="let row" class="mono">{{ row.invoiceNo }}</td>
         </ng-container>
+
+        <!-- Customer Name -->
         <ng-container matColumnDef="customerName">
-          <th mat-header-cell *matHeaderCellDef>Customer</th>
+          <th mat-header-cell *matHeaderCellDef mat-sort-header>Customer</th>
           <td mat-cell *matCellDef="let row">{{ row.customerName }}</td>
         </ng-container>
+
+        <!-- GSTIN -->
+        <ng-container matColumnDef="customerGSTIN">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header>GSTIN</th>
+          <td mat-cell *matCellDef="let row" class="mono">{{ row.customerGSTIN }}</td>
+        </ng-container>
+
+        <!-- Description -->
         <ng-container matColumnDef="description">
           <th mat-header-cell *matHeaderCellDef>Description</th>
           <td mat-cell *matCellDef="let row">{{ row.description }}</td>
         </ng-container>
+
+        <!-- Taxable Value -->
         <ng-container matColumnDef="taxableValue">
-          <th mat-header-cell *matHeaderCellDef>Taxable</th>
+          <th mat-header-cell *matHeaderCellDef mat-sort-header>Taxable</th>
           <td mat-cell *matCellDef="let row" class="amount">₹{{ row.taxableValue | number }}</td>
         </ng-container>
+
+        <!-- CGST -->
         <ng-container matColumnDef="cgstAmount">
-          <th mat-header-cell *matHeaderCellDef>CGST</th>
+          <th mat-header-cell *matHeaderCellDef mat-sort-header>CGST</th>
           <td mat-cell *matCellDef="let row" class="amount">₹{{ row.cgstAmount | number }}</td>
         </ng-container>
+
+        <!-- SGST -->
         <ng-container matColumnDef="sgstAmount">
-          <th mat-header-cell *matHeaderCellDef>SGST</th>
+          <th mat-header-cell *matHeaderCellDef mat-sort-header>SGST</th>
           <td mat-cell *matCellDef="let row" class="amount">₹{{ row.sgstAmount | number }}</td>
         </ng-container>
+
+        <!-- Invoice Value (Total) -->
         <ng-container matColumnDef="invoiceValue">
-          <th mat-header-cell *matHeaderCellDef>Total</th>
+          <th mat-header-cell *matHeaderCellDef mat-sort-header>Total</th>
           <td mat-cell *matCellDef="let row" class="amount total">₹{{ row.invoiceValue | number }}</td>
         </ng-container>
+
+        <!-- Actions: Edit + Delete -->
         <ng-container matColumnDef="actions">
           <th mat-header-cell *matHeaderCellDef>Actions</th>
           <td mat-cell *matCellDef="let row">
-            <button mat-icon-button color="primary" matTooltip="Edit"><mat-icon>edit</mat-icon></button>
-            <button mat-icon-button color="warn" matTooltip="Delete" (click)="deleteRow(row.id)"><mat-icon>delete</mat-icon></button>
+            <button mat-icon-button color="primary" matTooltip="Edit invoice" (click)="openEditForm(row)">
+              <mat-icon>edit</mat-icon>
+            </button>
+            <button mat-icon-button color="warn" matTooltip="Delete invoice" (click)="deleteRow(row.id)">
+              <mat-icon>delete</mat-icon>
+            </button>
           </td>
         </ng-container>
+
         <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
         <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+
+        <!-- No data row -->
+        <tr class="mat-row no-data-row" *matNoDataRow>
+          <td class="mat-cell" [attr.colspan]="displayedColumns.length">
+            @if (loading) {
+              Loading invoices...
+            } @else if (searchText || filterYear || filterMonth) {
+              No invoices match the current filters.
+            } @else {
+              No invoices found. Click "Add Invoice" to create one.
+            }
+          </td>
+        </tr>
       </table>
     </div>
-    <mat-paginator [pageSizeOptions]="[10, 25]" showFirstLastButtons></mat-paginator>
+    <mat-paginator [pageSizeOptions]="[10, 25, 50, 100]" showFirstLastButtons></mat-paginator>
   </mat-card-content>
 </mat-card>

@@ -1,7 +1,31 @@
-.page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 12px; h2 { margin: 0; } }
+.page-header {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: 16px; flex-wrap: wrap; gap: 12px;
+  h2 { margin: 0; }
+}
+.header-actions { display: flex; gap: 8px; flex-wrap: wrap; }
 .search-field { width: 100%; max-width: 400px; }
 .table-responsive { overflow-x: auto; }
 .full-width { width: 100%; }
 .mono { font-family: monospace; font-size: 12px; }
 .amount { font-weight: 600; white-space: nowrap; }
 .total { color: #1565c0; }
+.loading-container { display: flex; justify-content: center; padding: 24px; }
+
+// Summary cards
+.summary-cards {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px; margin-bottom: 16px;
+}
+.summary-card {
+  padding: 16px; text-align: center;
+  .summary-value { font-size: 20px; font-weight: 700; color: #1565c0; }
+  .summary-label { font-size: 12px; color: #666; margin-top: 4px; }
+  &.total .summary-value { color: #2e7d32; }
+}
+
+// Export filter row
+.export-filter-row {
+  display: flex; gap: 12px; margin-bottom: 8px; flex-wrap: wrap;
+  .filter-field { width: 160px; }
+}

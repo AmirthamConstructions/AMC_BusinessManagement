@@ -11,6 +11,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
+import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -19,6 +20,7 @@ import java.util.List;
 public class GstOutwardService {
 
     private final GstOutwardRepository gstOutwardRepository;
+    private final GstExcelService gstExcelService;
 
     public Page<GstOutward> findAll(int page, int size, String sortBy, String direction) {
         Sort sort = direction.equalsIgnoreCase("asc")
@@ -81,6 +83,19 @@ public class GstOutwardService {
             throw new ResourceNotFoundException("GstOutward", "id", id);
         }
         gstOutwardRepository.deleteById(id);
+    }
+
+    // ── Export to Excel ──────────────────────────────────────────────────────
+    public byte[] exportToExcel(String year, String month) throws IOException {
+        List<GstOutward> entries;
+        if (year != null && month != null) {
+            entries = gstOutwardRepository.findByYearAndInvoiceMonth(year, month);
+        } else if (year != null) {
+            entries = gstOutwardRepository.findByYear(year, PageRequest.of(0, 10000, Sort.by("invoiceDate").ascending())).getContent();
+        } else {
+            entries = gstOutwardRepository.findAll(Sort.by("invoiceDate").ascending());
+        }
+        return gstExcelService.exportOutwardToExcel(entries);
     }
 
     public PaginationMeta buildMeta(Page<?> page) {

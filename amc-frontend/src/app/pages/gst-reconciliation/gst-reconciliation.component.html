@@ -1,0 +1,275 @@
+<!-- ═══════════════════════════════════════════════════════════════════════════ -->
+<!-- HEADER: Title + Year/Month selectors                                     -->
+<!-- ═══════════════════════════════════════════════════════════════════════════ -->
+<div class="page-header">
+  <h2>GST Reconciliation</h2>
+  <div class="header-filters">
+    <mat-form-field appearance="outline" class="filter-field">
+      <mat-label>Financial Year</mat-label>
+      <mat-select [(ngModel)]="selectedYear" (selectionChange)="loadReconciliation()">
+        @for (y of years; track y) {
+          <mat-option [value]="y">{{ y }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+    <mat-form-field appearance="outline" class="filter-field">
+      <mat-label>Month</mat-label>
+      <mat-select [(ngModel)]="selectedMonth" (selectionChange)="loadReconciliation()">
+        @for (m of months; track m) {
+          <mat-option [value]="m">{{ m }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+  </div>
+</div>
+
+@if (loading) {
+  <div class="loading-container"><mat-spinner diameter="40"></mat-spinner></div>
+}
+
+@if (reconciliation && !loading) {
+  <!-- ═══════════════════════════════════════════════════════════════════════ -->
+  <!-- NET GST PAYABLE — Hero Card                                           -->
+  <!-- ═══════════════════════════════════════════════════════════════════════ -->
+  <mat-card class="hero-card" [ngClass]="getPayableClass()">
+    <div class="hero-label">Net GST Payable</div>
+    <div class="hero-value">{{ formatCurrency(reconciliation.netGstPayable) }}</div>
+    <div class="hero-sub">
+      {{ selectedMonth }} {{ selectedYear }} &bull;
+      @if (reconciliation.netGstPayable >= 0) {
+        Tax to be paid
+      } @else {
+        ITC refund available
+      }
+    </div>
+  </mat-card>
+
+  <!-- ═══════════════════════════════════════════════════════════════════════ -->
+  <!-- OUTWARD + INWARD Detail Sections (side by side)                       -->
+  <!-- ═══════════════════════════════════════════════════════════════════════ -->
+  <div class="recon-grid">
+    <!-- Output Tax (Outward / Sales) -->
+    <mat-card class="recon-section outward">
+      <mat-card-header>
+        <mat-card-title>
+          <mat-icon class="section-icon">call_made</mat-icon>
+          Output Tax (Sales — GSTR-1)
+        </mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        <div class="kpi-row">
+          <div class="kpi">
+            <span class="kpi-value">{{ reconciliation.outwardInvoiceCount }}</span>
+            <span class="kpi-label">Invoices</span>
+          </div>
+          <div class="kpi">
+            <span class="kpi-value">{{ formatCurrency(reconciliation.outwardTaxableValue) }}</span>
+            <span class="kpi-label">Taxable Value</span>
+          </div>
+          <div class="kpi">
+            <span class="kpi-value">{{ formatCurrency(reconciliation.outwardCgst) }}</span>
+            <span class="kpi-label">CGST</span>
+          </div>
+          <div class="kpi">
+            <span class="kpi-value">{{ formatCurrency(reconciliation.outwardSgst) }}</span>
+            <span class="kpi-label">SGST</span>
+          </div>
+          <div class="kpi highlight">
+            <span class="kpi-value">{{ formatCurrency(reconciliation.outwardTotalTax) }}</span>
+            <span class="kpi-label">Total Output Tax</span>
+          </div>
+        </div>
+
+        @if (reconciliation.outwardDetails.length > 0) {
+          <mat-divider></mat-divider>
+          <mat-form-field appearance="outline" class="detail-search">
+            <mat-label>Search sales invoices</mat-label>
+            <input matInput [(ngModel)]="outwardSearch" (keyup)="onOutwardSearchChange()" placeholder="Search...">
+            <mat-icon matSuffix>search</mat-icon>
+          </mat-form-field>
+          <div class="table-responsive">
+            <table mat-table [dataSource]="outwardDataSource" class="full-width detail-table">
+              <ng-container matColumnDef="invoiceNo">
+                <th mat-header-cell *matHeaderCellDef>Invoice No</th>
+                <td mat-cell *matCellDef="let row" class="mono">{{ row.invoiceNo }}</td>
+              </ng-container>
+              <ng-container matColumnDef="invoiceDate">
+                <th mat-header-cell *matHeaderCellDef>Date</th>
+                <td mat-cell *matCellDef="let row">{{ row.invoiceDate }}</td>
+              </ng-container>
+              <ng-container matColumnDef="customerName">
+                <th mat-header-cell *matHeaderCellDef>Customer</th>
+                <td mat-cell *matCellDef="let row">{{ row.customerName }}</td>
+              </ng-container>
+              <ng-container matColumnDef="customerGSTIN">
+                <th mat-header-cell *matHeaderCellDef>GSTIN</th>
+                <td mat-cell *matCellDef="let row" class="mono">{{ row.customerGSTIN }}</td>
+              </ng-container>
+              <ng-container matColumnDef="taxableValue">
+                <th mat-header-cell *matHeaderCellDef>Taxable</th>
+                <td mat-cell *matCellDef="let row" class="amount">₹{{ row.taxableValue | number }}</td>
+              </ng-container>
+              <ng-container matColumnDef="cgst">
+                <th mat-header-cell *matHeaderCellDef>CGST</th>
+                <td mat-cell *matCellDef="let row" class="amount">₹{{ row.cgst | number }}</td>
+              </ng-container>
+              <ng-container matColumnDef="sgst">
+                <th mat-header-cell *matHeaderCellDef>SGST</th>
+                <td mat-cell *matCellDef="let row" class="amount">₹{{ row.sgst | number }}</td>
+              </ng-container>
+              <ng-container matColumnDef="invoiceValue">
+                <th mat-header-cell *matHeaderCellDef>Total</th>
+                <td mat-cell *matCellDef="let row" class="amount total-outward">₹{{ row.invoiceValue | number }}</td>
+              </ng-container>
+              <tr mat-header-row *matHeaderRowDef="outwardColumns"></tr>
+              <tr mat-row *matRowDef="let row; columns: outwardColumns;"></tr>
+              <tr class="mat-row no-data-row" *matNoDataRow>
+                <td class="mat-cell" [attr.colspan]="outwardColumns.length">
+                  No sales invoices match the search.
+                </td>
+              </tr>
+            </table>
+          </div>
+        } @else {
+          <div class="empty-detail">No sales invoices for {{ selectedMonth }} {{ selectedYear }}</div>
+        }
+      </mat-card-content>
+    </mat-card>
+
+    <!-- Input Tax Credit (Inward / Purchases) -->
+    <mat-card class="recon-section inward">
+      <mat-card-header>
+        <mat-card-title>
+          <mat-icon class="section-icon">call_received</mat-icon>
+          Input Tax Credit (Purchases — GSTR-2B)
+        </mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        <div class="kpi-row">
+          <div class="kpi">
+            <span class="kpi-value">{{ reconciliation.inwardInvoiceCount }}</span>
+            <span class="kpi-label">Purchase Bills</span>
+          </div>
+          <div class="kpi">
+            <span class="kpi-value">{{ formatCurrency(reconciliation.inwardTaxableValue) }}</span>
+            <span class="kpi-label">Taxable Value</span>
+          </div>
+          <div class="kpi">
+            <span class="kpi-value">{{ formatCurrency(reconciliation.inwardCgst) }}</span>
+            <span class="kpi-label">CGST</span>
+          </div>
+          <div class="kpi">
+            <span class="kpi-value">{{ formatCurrency(reconciliation.inwardSgst) }}</span>
+            <span class="kpi-label">SGST</span>
+          </div>
+          <div class="kpi highlight">
+            <span class="kpi-value">{{ formatCurrency(reconciliation.inwardTotalTax) }}</span>
+            <span class="kpi-label">Total ITC</span>
+          </div>
+        </div>
+
+        @if (reconciliation.inwardDetails.length > 0) {
+          <mat-divider></mat-divider>
+          <mat-form-field appearance="outline" class="detail-search">
+            <mat-label>Search purchase bills</mat-label>
+            <input matInput [(ngModel)]="inwardSearch" (keyup)="onInwardSearchChange()" placeholder="Search...">
+            <mat-icon matSuffix>search</mat-icon>
+          </mat-form-field>
+          <div class="table-responsive">
+            <table mat-table [dataSource]="inwardDataSource" class="full-width detail-table">
+              <ng-container matColumnDef="purchaseBillNo">
+                <th mat-header-cell *matHeaderCellDef>Bill No</th>
+                <td mat-cell *matCellDef="let row" class="mono">{{ row.purchaseBillNo }}</td>
+              </ng-container>
+              <ng-container matColumnDef="invoiceDate">
+                <th mat-header-cell *matHeaderCellDef>Date</th>
+                <td mat-cell *matCellDef="let row">{{ row.invoiceDate }}</td>
+              </ng-container>
+              <ng-container matColumnDef="companyName">
+                <th mat-header-cell *matHeaderCellDef>Supplier</th>
+                <td mat-cell *matCellDef="let row">{{ row.companyName }}</td>
+              </ng-container>
+              <ng-container matColumnDef="companyGSTIN">
+                <th mat-header-cell *matHeaderCellDef>GSTIN</th>
+                <td mat-cell *matCellDef="let row" class="mono">{{ row.companyGSTIN }}</td>
+              </ng-container>
+              <ng-container matColumnDef="taxableValue">
+                <th mat-header-cell *matHeaderCellDef>Taxable</th>
+                <td mat-cell *matCellDef="let row" class="amount">₹{{ row.taxableValue | number }}</td>
+              </ng-container>
+              <ng-container matColumnDef="cgst">
+                <th mat-header-cell *matHeaderCellDef>CGST</th>
+                <td mat-cell *matCellDef="let row" class="amount">₹{{ row.cgst | number }}</td>
+              </ng-container>
+              <ng-container matColumnDef="sgst">
+                <th mat-header-cell *matHeaderCellDef>SGST</th>
+                <td mat-cell *matCellDef="let row" class="amount">₹{{ row.sgst | number }}</td>
+              </ng-container>
+              <ng-container matColumnDef="purchaseBillValue">
+                <th mat-header-cell *matHeaderCellDef>Total</th>
+                <td mat-cell *matCellDef="let row" class="amount total-inward">₹{{ row.purchaseBillValue | number }}</td>
+              </ng-container>
+              <tr mat-header-row *matHeaderRowDef="inwardColumns"></tr>
+              <tr mat-row *matRowDef="let row; columns: inwardColumns;"></tr>
+              <tr class="mat-row no-data-row" *matNoDataRow>
+                <td class="mat-cell" [attr.colspan]="inwardColumns.length">
+                  No purchase bills match the search.
+                </td>
+              </tr>
+            </table>
+          </div>
+        } @else {
+          <div class="empty-detail">No purchase bills for {{ selectedMonth }} {{ selectedYear }}</div>
+        }
+      </mat-card-content>
+    </mat-card>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════════════════ -->
+  <!-- RECONCILIATION SUMMARY TABLE                                           -->
+  <!-- ═══════════════════════════════════════════════════════════════════════ -->
+  <mat-card class="recon-summary-card">
+    <mat-card-header>
+      <mat-card-title>Reconciliation Summary — {{ selectedMonth }} {{ selectedYear }}</mat-card-title>
+    </mat-card-header>
+    <mat-card-content>
+      <table class="summary-table">
+        <thead>
+          <tr>
+            <th>Particular</th>
+            <th class="amount-col">CGST</th>
+            <th class="amount-col">SGST</th>
+            <th class="amount-col">Total</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Output Tax (Sales)</td>
+            <td class="amount-col">{{ formatCurrency(reconciliation.outwardCgst) }}</td>
+            <td class="amount-col">{{ formatCurrency(reconciliation.outwardSgst) }}</td>
+            <td class="amount-col"><strong>{{ formatCurrency(reconciliation.outwardTotalTax) }}</strong></td>
+          </tr>
+          <tr>
+            <td>Input Tax Credit (Purchases)</td>
+            <td class="amount-col">{{ formatCurrency(reconciliation.inwardCgst) }}</td>
+            <td class="amount-col">{{ formatCurrency(reconciliation.inwardSgst) }}</td>
+            <td class="amount-col"><strong>{{ formatCurrency(reconciliation.inwardTotalTax) }}</strong></td>
+          </tr>
+          <tr class="net-row" [ngClass]="getPayableClass()">
+            <td><strong>Net GST Payable</strong></td>
+            <td class="amount-col">{{ formatCurrency((reconciliation.outwardCgst || 0) - (reconciliation.inwardCgst || 0)) }}</td>
+            <td class="amount-col">{{ formatCurrency((reconciliation.outwardSgst || 0) - (reconciliation.inwardSgst || 0)) }}</td>
+            <td class="amount-col"><strong>{{ formatCurrency(reconciliation.netGstPayable) }}</strong></td>
+          </tr>
+        </tbody>
+      </table>
+    </mat-card-content>
+  </mat-card>
+}
+
+@if (!reconciliation && !loading) {
+  <mat-card class="empty-state">
+    <mat-icon>compare_arrows</mat-icon>
+    <p>Select a financial year and month to view GST reconciliation</p>
+  </mat-card>
+}

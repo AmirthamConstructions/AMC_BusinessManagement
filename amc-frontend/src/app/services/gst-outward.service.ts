@@ -38,4 +38,15 @@ export class GstOutwardService {
   delete(id: string): Observable<void> {
     return this.http.delete<void>(`${this.url}/${id}`);
   }
+
+  // ── R2.2 — Export GSTR-1 as Excel ─────────────────────────────────────────
+  exportExcel(year?: string, month?: string): Observable<Blob> {
+    let params = new HttpParams();
+    if (year) params = params.set('year', year);
+    if (month) params = params.set('month', month);
+    return this.http.get(`${this.url}/export`, {
+      params,
+      responseType: 'blob'
+    });
+  }
 }

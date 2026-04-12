@@ -24,6 +24,7 @@ export class LayoutComponent {
     { label: 'Profit & Loss', icon: 'trending_up', route: '/profit-loss' },
     { label: 'GST Outward', icon: 'call_made', route: '/gst-outward' },
     { label: 'GST Inward', icon: 'call_received', route: '/gst-inward' },
+    { label: 'GST Reconciliation', icon: 'compare_arrows', route: '/gst-reconciliation' },
     { label: 'Materials', icon: 'inventory_2', route: '/materials' },
     { label: 'Invoices', icon: 'description', route: '/invoices' },
     { label: 'Dimensions', icon: 'tune', route: '/dimensions' },

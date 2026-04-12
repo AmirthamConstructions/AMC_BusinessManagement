@@ -6,6 +6,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.stereotype.Repository;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
@@ -17,4 +18,6 @@ public interface GstInwardRepository extends MongoRepository<GstInward, String> 
     Page<GstInward> findByYear(String year, Pageable pageable);
     Page<GstInward> findByInvoiceMonth(String invoiceMonth, Pageable pageable);
     List<GstInward> findByYearAndInvoiceMonth(String year, String invoiceMonth);
+    boolean existsByPurchaseBillNoAndInvoiceDate(String purchaseBillNo, LocalDate invoiceDate);
+    List<GstInward> findByInvoiceDateBetween(LocalDate start, LocalDate end);
 }

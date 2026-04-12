@@ -80,6 +80,13 @@
             <optional>true</optional>
         </dependency>
 
+        <!-- Apache POI — Excel read/write for GST upload/export (4.1.2 for Java 8 compat) -->
+        <dependency>
+            <groupId>org.apache.poi</groupId>
+            <artifactId>poi-ooxml</artifactId>
+            <version>4.1.2</version>
+        </dependency>
+
         <!-- Test -->
         <dependency>
             <groupId>org.springframework.boot</groupId>

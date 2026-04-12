@@ -1,0 +1,96 @@
+.page-header {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: 16px; flex-wrap: wrap; gap: 12px;
+  h2 { margin: 0; }
+}
+.header-filters { display: flex; gap: 12px; flex-wrap: wrap; }
+.filter-field { width: 160px; }
+.loading-container { display: flex; justify-content: center; padding: 40px; }
+
+// Hero card
+.hero-card {
+  text-align: center; padding: 24px; margin-bottom: 20px;
+  border-left: 4px solid #1565c0;
+  .hero-label { font-size: 14px; color: #666; text-transform: uppercase; letter-spacing: 1px; }
+  .hero-value { font-size: 36px; font-weight: 700; margin: 8px 0; }
+  .hero-sub { font-size: 13px; color: #888; }
+  &.payable {
+    border-left-color: #c62828;
+    .hero-value { color: #c62828; }
+  }
+  &.refund {
+    border-left-color: #2e7d32;
+    .hero-value { color: #2e7d32; }
+  }
+}
+
+// Recon grid
+.recon-grid {
+  display: grid; grid-template-columns: 1fr 1fr;
+  gap: 16px; margin-bottom: 20px;
+  @media (max-width: 960px) { grid-template-columns: 1fr; }
+}
+.recon-section {
+  .section-icon { vertical-align: middle; margin-right: 4px; font-size: 20px; }
+  mat-card-header { margin-bottom: 12px; }
+}
+
+// KPI row
+.kpi-row {
+  display: flex; flex-wrap: wrap; gap: 16px; margin-bottom: 16px;
+}
+.kpi {
+  display: flex; flex-direction: column; align-items: center;
+  min-width: 80px; flex: 1;
+  .kpi-value { font-size: 18px; font-weight: 700; color: #333; }
+  .kpi-label { font-size: 11px; color: #888; text-transform: uppercase; margin-top: 2px; }
+  &.highlight {
+    .kpi-value { font-size: 20px; }
+  }
+}
+.outward .kpi.highlight .kpi-value { color: #c62828; }
+.inward .kpi.highlight .kpi-value { color: #2e7d32; }
+
+// Detail search field
+.detail-search {
+  width: 100%; margin-top: 12px; font-size: 13px;
+}
+
+// Detail tables
+.table-responsive { overflow-x: auto; margin-top: 8px; }
+.full-width { width: 100%; }
+.detail-table { font-size: 13px; }
+.mono { font-family: monospace; font-size: 12px; }
+.amount { font-weight: 600; white-space: nowrap; text-align: right; }
+.total-outward { color: #c62828; }
+.total-inward { color: #2e7d32; }
+
+// Empty detail message
+.empty-detail {
+  text-align: center; padding: 24px 16px; color: #999; font-style: italic; font-size: 13px;
+}
+
+// No data row
+.no-data-row td {
+  text-align: center; padding: 16px; color: #999; font-style: italic;
+}
+
+// Reconciliation summary table
+.recon-summary-card { margin-bottom: 20px; }
+.summary-table {
+  width: 100%; border-collapse: collapse;
+  th, td { padding: 10px 16px; border-bottom: 1px solid #e0e0e0; text-align: left; }
+  th { background: #f5f5f5; font-size: 13px; color: #666; text-transform: uppercase; }
+  .amount-col { text-align: right; white-space: nowrap; }
+  .net-row {
+    &.payable td { background: #ffebee; color: #c62828; font-weight: 600; }
+    &.refund td { background: #e8f5e9; color: #2e7d32; font-weight: 600; }
+  }
+}
+
+// Empty state
+.empty-state {
+  text-align: center; padding: 48px 24px; color: #999;
+  mat-icon { font-size: 48px; width: 48px; height: 48px; margin-bottom: 12px; }
+  p { font-size: 16px; }
+}

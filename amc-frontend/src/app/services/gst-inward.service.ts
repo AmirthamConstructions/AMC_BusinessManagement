@@ -4,6 +4,7 @@ import { Observable, map } from 'rxjs';
 import { environment } from '../../environments/environment';
 import { GstInward } from '../models/gst-inward.model';
 import { ApiResponse, PaginationMeta } from '../models/api-response.model';
+import { Gst2bUploadResult, GstReconciliation } from '../models/gst-reconciliation.model';
 
 @Injectable({ providedIn: 'root' })
 export class GstInwardService {
@@ -37,5 +38,31 @@ export class GstInwardService {
 
   delete(id: string): Observable<void> {
     return this.http.delete<void>(`${this.url}/${id}`);
+  }
+
+  // ── R2.1 — Upload GST 2B Excel ──────────────────────────────────────────
+  uploadExcel(file: File): Observable<Gst2bUploadResult> {
+    const formData = new FormData();
+    formData.append('file', file, file.name);
+    return this.http.post<ApiResponse<Gst2bUploadResult>>(`${this.url}/upload`, formData)
+      .pipe(map(res => res.data));
+  }
+
+  // ── R2.2 — Export GST 2B as Excel ────────────────────────────────────────
+  exportExcel(year?: string, month?: string): Observable<Blob> {
+    let params = new HttpParams();
+    if (year) params = params.set('year', year);
+    if (month) params = params.set('month', month);
+    return this.http.get(`${this.url}/export`, {
+      params,
+      responseType: 'blob'
+    });
+  }
+
+  // ── R2.4 — GST Reconciliation ─────────────────────────────────────────────
+  getReconciliation(year: string, month: string): Observable<GstReconciliation> {
+    const params = new HttpParams().set('year', year).set('month', month);
+    return this.http.get<ApiResponse<GstReconciliation>>(`${this.url}/reconciliation`, { params })
+      .pipe(map(res => res.data));
   }
 }

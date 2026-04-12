@@ -1,7 +1,88 @@
-.page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 12px; h2 { margin: 0; } }
-.search-field { width: 100%; max-width: 400px; }
+.page-header {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: 16px; flex-wrap: wrap; gap: 12px;
+  h2 { margin: 0; }
+}
+.header-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.spacer { flex: 1; }
+.search-field { flex: 1; min-width: 200px; max-width: 400px; }
 .table-responsive { overflow-x: auto; }
 .full-width { width: 100%; }
 .mono { font-family: monospace; font-size: 12px; }
 .amount { font-weight: 600; white-space: nowrap; }
 .total { color: #c62828; }
+.loading-container { display: flex; justify-content: center; padding: 24px; }
+
+// Summary cards
+.summary-cards {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px; margin-bottom: 16px;
+}
+.summary-card {
+  padding: 16px; text-align: center;
+  .summary-value { font-size: 20px; font-weight: 700; color: #1565c0; }
+  .summary-label { font-size: 12px; color: #666; margin-top: 4px; }
+  &.total .summary-value { color: #c62828; }
+}
+
+// Filter row (year + month + search side by side)
+.filter-row {
+  display: flex; gap: 12px; margin-bottom: 8px; flex-wrap: wrap; align-items: center;
+  .filter-field { width: 160px; }
+}
+
+// Add / Edit form
+.form-card {
+  margin-bottom: 16px;
+  mat-card-header { display: flex; align-items: center; width: 100%; }
+}
+.form-grid {
+  display: grid; grid-template-columns: repeat(3, 1fr);
+  gap: 12px 16px;
+  @media (max-width: 768px) { grid-template-columns: 1fr; }
+  .full-span { grid-column: 1 / -1; }
+}
+.form-actions {
+  display: flex; justify-content: flex-end; gap: 8px; margin-top: 12px;
+}
+.total-field { font-weight: 700; color: #c62828; }
+
+// Upload card
+.upload-card {
+  margin-bottom: 16px;
+  mat-card-header { display: flex; align-items: center; width: 100%; }
+}
+.upload-hint { color: #666; font-size: 13px; margin-bottom: 12px; }
+.upload-area {
+  display: flex; align-items: center; gap: 12px; margin-bottom: 12px;
+  .file-name { font-size: 13px; color: #333; }
+}
+.upload-actions { margin-bottom: 12px; }
+.inline-spinner { display: inline-block; margin-right: 8px; vertical-align: middle; }
+
+// Upload result
+.upload-result { margin-top: 16px; }
+.result-cards {
+  display: flex; gap: 12px; margin: 12px 0; flex-wrap: wrap;
+}
+.result-item {
+  display: flex; flex-direction: column; align-items: center;
+  padding: 12px 20px; border-radius: 8px; min-width: 80px;
+  .result-count { font-size: 24px; font-weight: 700; }
+  .result-label { font-size: 11px; text-transform: uppercase; margin-top: 4px; }
+  &.success { background: #e8f5e9; .result-count { color: #2e7d32; } }
+  &.warn { background: #fff3e0; .result-count { color: #e65100; } }
+  &.error { background: #ffebee; .result-count { color: #c62828; } }
+  &.info { background: #e3f2fd; .result-count { color: #1565c0; } }
+}
+.result-details {
+  font-size: 12px; margin-top: 8px;
+  ul { margin: 4px 0 0 16px; padding: 0; }
+  li { margin-bottom: 2px; }
+  &.error-details { color: #c62828; }
+}
+
+// No data row
+.no-data-row td {
+  text-align: center; padding: 24px; color: #999; font-style: italic;
+}

@@ -6,10 +6,13 @@ import com.amc.backend.service.GstOutwardService;
 import javax.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.io.IOException;
 import java.util.List;
 
 @RestController
@@ -77,5 +80,24 @@ public class GstOutwardController {
     public ResponseEntity<Void> delete(@PathVariable String id) {
         gstOutwardService.delete(id);
         return ResponseEntity.noContent().build();
+    }
+
+    // ── R2.2 — Export GSTR-1 as Excel ────────────────────────────────────────
+    @GetMapping("/export")
+    public ResponseEntity<byte[]> exportExcel(
+            @RequestParam(required = false) String year,
+            @RequestParam(required = false) String month) throws IOException {
+        byte[] excelBytes = gstOutwardService.exportToExcel(year, month);
+        String filename = "GSTR-1_Outward";
+        if (year != null) filename += "_" + year;
+        if (month != null) filename += "_" + month;
+        filename += ".xlsx";
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"));
+        headers.setContentDispositionFormData("attachment", filename);
+        headers.setContentLength(excelBytes.length);
+
+        return new ResponseEntity<>(excelBytes, headers, HttpStatus.OK);
     }
 }
