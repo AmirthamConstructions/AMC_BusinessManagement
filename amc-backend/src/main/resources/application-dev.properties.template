@@ -1,0 +1,29 @@
+# ═══════════════════════════════════════════════════════════════════════════════
+#  AMC Business Management — LOCAL DEVELOPMENT Profile TEMPLATE
+#
+#  ✅ THIS FILE IS SAFE TO COMMIT — it contains only placeholders, no real secrets.
+#
+#  SETUP INSTRUCTIONS:
+#    1. Copy this file:
+#         cp application-dev.properties.template application-dev.properties
+#    2. Fill in the real values in application-dev.properties
+#    3. Never commit application-dev.properties (it is git-ignored)
+# ═══════════════════════════════════════════════════════════════════════════════
+
+# ── MongoDB Atlas ─────────────────────────────────────────────────────────────
+# Get the connection string from MongoDB Atlas dashboard → Connect → Drivers
+spring.data.mongodb.uri=mongodb+srv://<USERNAME>:<PASSWORD>@<CLUSTER>.mongodb.net/?appName=<APP_NAME>
+
+# ── CORS ──────────────────────────────────────────────────────────────────────
+# Comma-separated list of allowed frontend origins
+app.cors.allowed-origins=http://localhost:4200
+
+# ── JWT Signing Secret ────────────────────────────────────────────────────────
+# Must be a Base64-encoded random string of at least 256 bits (32 bytes).
+# Generate with: openssl rand -base64 64
+app.jwt.secret=<BASE64_ENCODED_256BIT_RANDOM_SECRET>
+
+# ── Logging ───────────────────────────────────────────────────────────────────
+logging.level.com.amc.backend=DEBUG
+logging.level.org.springframework.data.mongodb=DEBUG
+logging.level.org.springframework.security=DEBUG

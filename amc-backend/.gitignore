@@ -1,6 +1,12 @@
 /target
 *.jar
-*application.properties
+
+# ── Spring profile properties with real secrets (NEVER commit these) ──────────
+src/main/resources/application-dev.properties
+src/main/resources/application-prod.properties
+# Keep: application.properties (base, no secrets)
+# Keep: application-*.properties.template (safe placeholders)
+
 .settings/
 .classpath
 .project

@@ -1,0 +1,38 @@
+# ═══════════════════════════════════════════════════════════════════════════════
+#  AMC Business Management — PRODUCTION Profile TEMPLATE
+#
+#  ✅ THIS FILE IS SAFE TO COMMIT — it contains only env-var references, no real secrets.
+#
+#  DEPLOYMENT INSTRUCTIONS:
+#    1. Copy this file on the server:
+#         cp application-prod.properties.template application-prod.properties
+#    2. Export the required environment variables (see list below) before starting
+#    3. Start the app with: java -jar amc-backend.jar --spring.profiles.active=prod
+#
+#  Required environment variables:
+#    MONGO_URI      — Full MongoDB Atlas connection string including credentials
+#                     Example: mongodb+srv://user:pass@cluster.mongodb.net/?appName=X
+#    JWT_SECRET     — Base64-encoded random secret (min 256 bits)
+#                     Generate: openssl rand -base64 64
+#    CORS_ORIGINS   — Comma-separated allowed origins
+#                     Example: https://amc.yourdomain.com
+# ═══════════════════════════════════════════════════════════════════════════════
+
+# ── MongoDB Atlas ─────────────────────────────────────────────────────────────
+spring.data.mongodb.uri=${MONGO_URI}
+
+# ── CORS ──────────────────────────────────────────────────────────────────────
+app.cors.allowed-origins=${CORS_ORIGINS}
+
+# ── JWT Signing Secret ────────────────────────────────────────────────────────
+app.jwt.secret=${JWT_SECRET}
+
+# ── Logging (minimal — no sensitive data in logs) ─────────────────────────────
+logging.level.com.amc.backend=INFO
+logging.level.org.springframework.data.mongodb=WARN
+logging.level.org.springframework.security=WARN
+
+# ── Server hardening ──────────────────────────────────────────────────────────
+server.error.include-message=never
+server.error.include-stacktrace=never
+server.error.include-binding-errors=never

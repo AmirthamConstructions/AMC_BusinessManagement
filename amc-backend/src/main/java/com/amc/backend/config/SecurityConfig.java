@@ -52,24 +52,21 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-            .cors().configurationSource(corsConfigurationSource())
-            .and()
-            .csrf().disable()
-            .exceptionHandling().authenticationEntryPoint(jwtAuthenticationEntryPoint)
-            .and()
-            .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS)
-            .and()
-            .authorizeRequests()
-                // Public endpoints
-                .antMatchers("/api/auth/**").permitAll()
-                .antMatchers("/api/health").permitAll()
-                .antMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-                // Admin-only endpoints
-                .antMatchers(HttpMethod.DELETE, "/api/**").hasRole("ADMIN")
-                .antMatchers("/api/users/**").hasRole("ADMIN")
-                // All other API endpoints require authentication
-                .antMatchers("/api/**").authenticated()
-                .anyRequest().permitAll();
+                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+                .csrf(csrf -> csrf.disable())
+                .exceptionHandling(handling -> handling.authenticationEntryPoint(jwtAuthenticationEntryPoint))
+                .sessionManagement(management -> management.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .authorizeRequests(requests -> requests
+                        // Public endpoints
+                        .antMatchers("/api/auth/**").permitAll()
+                        .antMatchers("/api/health").permitAll()
+                        .antMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+                        // Admin-only endpoints
+                        .antMatchers(HttpMethod.DELETE, "/api/**").hasRole("ADMIN")
+                        .antMatchers("/api/users/**").hasRole("ADMIN")
+                        // All other API endpoints require authentication
+                        .antMatchers("/api/**").authenticated()
+                        .anyRequest().permitAll());
 
         http.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 

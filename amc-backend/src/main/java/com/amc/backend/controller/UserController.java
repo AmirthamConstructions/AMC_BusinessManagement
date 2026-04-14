@@ -1,7 +1,9 @@
 package com.amc.backend.controller;
 
 import com.amc.backend.dto.ApiResponse;
-import com.amc.backend.model.User;
+import com.amc.backend.dto.CreateUserRequest;
+import com.amc.backend.dto.UpdateUserRequest;
+import com.amc.backend.dto.UserResponseDto;
 import com.amc.backend.service.UserService;
 import javax.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -19,38 +21,41 @@ public class UserController {
     private final UserService userService;
 
     @GetMapping
-    public ResponseEntity<ApiResponse<List<User>>> getAll() {
-        List<User> users = userService.findAll();
+    public ResponseEntity<ApiResponse<List<UserResponseDto>>> getAll() {
+        List<UserResponseDto> users = userService.findAll();
         return ResponseEntity.ok(ApiResponse.ok(users));
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<ApiResponse<User>> getById(@PathVariable String id) {
-        User user = userService.findById(id);
+    public ResponseEntity<ApiResponse<UserResponseDto>> getById(@PathVariable String id) {
+        UserResponseDto user = userService.findById(id);
         return ResponseEntity.ok(ApiResponse.ok(user));
     }
 
     @GetMapping("/email/{email}")
-    public ResponseEntity<ApiResponse<User>> getByEmail(@PathVariable String email) {
-        User user = userService.findByEmail(email);
+    public ResponseEntity<ApiResponse<UserResponseDto>> getByEmail(@PathVariable String email) {
+        UserResponseDto user = userService.findByEmail(email);
         return ResponseEntity.ok(ApiResponse.ok(user));
     }
 
     @PostMapping
-    public ResponseEntity<ApiResponse<User>> create(@Valid @RequestBody User user) {
-        User created = userService.create(user);
+    public ResponseEntity<ApiResponse<UserResponseDto>> create(
+            @Valid @RequestBody CreateUserRequest request) {
+        UserResponseDto created = userService.create(request);
         return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.ok(created));
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<ApiResponse<User>> update(@PathVariable String id, @Valid @RequestBody User user) {
-        User updated = userService.update(id, user);
+    public ResponseEntity<ApiResponse<UserResponseDto>> update(
+            @PathVariable String id,
+            @Valid @RequestBody UpdateUserRequest request) {
+        UserResponseDto updated = userService.update(id, request);
         return ResponseEntity.ok(ApiResponse.ok(updated));
     }
 
     @PatchMapping("/{id}/last-login")
-    public ResponseEntity<ApiResponse<User>> updateLastLogin(@PathVariable String id) {
-        User updated = userService.updateLastLogin(id);
+    public ResponseEntity<ApiResponse<UserResponseDto>> updateLastLogin(@PathVariable String id) {
+        UserResponseDto updated = userService.updateLastLogin(id);
         return ResponseEntity.ok(ApiResponse.ok(updated));
     }
 
