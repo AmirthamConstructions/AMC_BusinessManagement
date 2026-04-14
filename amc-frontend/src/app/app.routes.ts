@@ -20,6 +20,7 @@ export const routes: Routes = [
       { path: 'dashboard', loadComponent: () => import('./pages/dashboard/dashboard.component').then(m => m.DashboardComponent) },
       { path: 'transactions', loadComponent: () => import('./pages/transactions/transactions.component').then(m => m.TransactionsComponent) },
       { path: 'sites', loadComponent: () => import('./pages/sites/sites.component').then(m => m.SitesComponent) },
+      { path: 'sites/:id', loadComponent: () => import('./pages/site-detail/site-detail.component').then(m => m.SiteDetailComponent) },
       { path: 'balance-sheet', loadComponent: () => import('./pages/balance-sheet/balance-sheet.component').then(m => m.BalanceSheetComponent) },
       { path: 'profit-loss', loadComponent: () => import('./pages/profit-loss/profit-loss.component').then(m => m.ProfitLossComponent) },
       { path: 'gst-outward', loadComponent: () => import('./pages/gst-outward/gst-outward.component').then(m => m.GstOutwardComponent) },

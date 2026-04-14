@@ -3,6 +3,7 @@ import { HttpClient } from '@angular/common/http';
 import { Observable, map } from 'rxjs';
 import { environment } from '../../environments/environment';
 import { Site } from '../models/site.model';
+import { SiteAnalytics, SitesOverview } from '../models/site-analytics.model';
 import { ApiResponse } from '../models/api-response.model';
 
 @Injectable({ providedIn: 'root' })
@@ -44,5 +45,22 @@ export class SiteService {
 
   delete(id: string): Observable<void> {
     return this.http.delete<void>(`${this.url}/${id}`);
+  }
+
+  // ── R5.1 — Single site analytics ──────────────────────────────────────────
+  getSiteAnalytics(id: string): Observable<SiteAnalytics> {
+    return this.http.get<ApiResponse<SiteAnalytics>>(`${this.url}/${id}/analytics`)
+      .pipe(map(res => res.data));
+  }
+
+  // ── R5.2 — All sites overview ─────────────────────────────────────────────
+  getSitesOverview(): Observable<SitesOverview> {
+    return this.http.get<ApiResponse<SitesOverview>>(`${this.url}/analytics/overview`)
+      .pipe(map(res => res.data));
+  }
+
+  // ── R5.4 — Export site detail Excel ───────────────────────────────────────
+  exportSiteDetail(id: string): Observable<Blob> {
+    return this.http.get(`${this.url}/${id}/export`, { responseType: 'blob' });
   }
 }

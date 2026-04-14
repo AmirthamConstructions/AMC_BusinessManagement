@@ -24,6 +24,8 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatDividerModule } from '@angular/material/divider';
 import { MatBadgeModule } from '@angular/material/badge';
+import { MatSlideToggleModule } from '@angular/material/slide-toggle';
+import { NgChartsModule } from 'ng2-charts';
 
 const materialModules = [
   MatToolbarModule, MatSidenavModule, MatListModule, MatIconModule,
@@ -31,11 +33,12 @@ const materialModules = [
   MatSortModule, MatFormFieldModule, MatInputModule, MatSelectModule,
   MatDatepickerModule, MatNativeDateModule, MatDialogModule,
   MatSnackBarModule, MatChipsModule, MatTabsModule, MatMenuModule,
-  MatTooltipModule, MatProgressSpinnerModule, MatDividerModule, MatBadgeModule
+  MatTooltipModule, MatProgressSpinnerModule, MatDividerModule, MatBadgeModule,
+  MatSlideToggleModule
 ];
 
 @NgModule({
-  imports: [CommonModule, FormsModule, ReactiveFormsModule, ...materialModules],
-  exports: [CommonModule, FormsModule, ReactiveFormsModule, ...materialModules]
+  imports: [CommonModule, FormsModule, ReactiveFormsModule, ...materialModules, NgChartsModule],
+  exports: [CommonModule, FormsModule, ReactiveFormsModule, ...materialModules, NgChartsModule]
 })
 export class SharedModule {}

@@ -15,4 +15,6 @@ public interface MaterialRepository extends MongoRepository<Material, String> {
     List<Material> findByDateBetween(LocalDate startDate, LocalDate endDate);
     Page<Material> findByShopName(String shopName, Pageable pageable);
     Page<Material> findByItemNameContainingIgnoreCase(String itemName, Pageable pageable);
+    List<Material> findBySiteName(String siteName);
+    List<Material> findBySiteNameIgnoreCase(String siteName);
 }

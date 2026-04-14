@@ -20,4 +20,6 @@ public interface TransactionRepository extends MongoRepository<Transaction, Stri
     List<Transaction> findByDateBetween(LocalDate startDate, LocalDate endDate);
     Page<Transaction> findByCompanyAndDateBetween(String company, LocalDate startDate, LocalDate endDate, Pageable pageable);
     List<Transaction> findBySiteIdAndDateBetween(String siteId, LocalDate startDate, LocalDate endDate);
+    List<Transaction> findBySiteName(String siteName);
+    List<Transaction> findBySiteNameIgnoreCase(String siteName);
 }

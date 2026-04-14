@@ -1,0 +1,534 @@
+<!-- ══════════════════════════════════════════════════════════════
+     LOADING STATE
+══════════════════════════════════════════════════════════════ -->
+@if (loading) {
+  <div class="full-loading">
+    <mat-spinner diameter="56"></mat-spinner>
+    <p>Loading site analytics…</p>
+  </div>
+}
+
+@if (!loading && analytics) {
+<!-- ══════════════════════════════════════════════════════════════
+     PAGE HEADER
+══════════════════════════════════════════════════════════════ -->
+<div class="page-header">
+  <div class="header-left">
+    <button mat-icon-button (click)="goBack()" matTooltip="Back to Sites" class="back-btn">
+      <mat-icon>arrow_back</mat-icon>
+    </button>
+    <div class="header-info">
+      <h2>{{ analytics.siteName }}</h2>
+      <div class="header-meta">
+        <span class="company-badge" [class.main]="analytics.company === 'Main'" [class.gst]="analytics.company === 'GST'">
+          {{ analytics.company }}
+        </span>
+        <span class="status-chip" [class.active]="analytics.isActive" [class.inactive]="!analytics.isActive">
+          <mat-icon class="status-icon">{{ analytics.isActive ? 'check_circle' : 'cancel' }}</mat-icon>
+          {{ analytics.isActive ? 'Active' : 'Inactive' }}
+        </span>
+        @if (analytics.clientName) {
+          <span class="meta-item"><mat-icon class="meta-icon">person</mat-icon>{{ analytics.clientName }}</span>
+        }
+        @if (analytics.address) {
+          <span class="meta-item"><mat-icon class="meta-icon">place</mat-icon>{{ analytics.address }}</span>
+        }
+      </div>
+    </div>
+  </div>
+  <div class="header-actions">
+    <button mat-stroked-button (click)="exportExcel()" [disabled]="exporting">
+      @if (exporting) { <mat-spinner diameter="18" style="display:inline-block;margin-right:6px"></mat-spinner> }
+      @if (!exporting) { <mat-icon>download</mat-icon> }
+      Export Excel
+    </button>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════
+     FINANCIAL SUMMARY CARDS
+══════════════════════════════════════════════════════════════ -->
+<div class="kpi-row">
+  <mat-card class="kpi-card quotation">
+    <mat-card-content>
+      <div class="kpi-icon-wrap quotation"><mat-icon>request_quote</mat-icon></div>
+      <div class="kpi-body">
+        <span class="kpi-value">{{ formatCurrency(analytics.quotationAmount) }}</span>
+        <span class="kpi-label">Quotation</span>
+        <div class="budget-bar-wrap">
+          <div class="budget-bar" [class]="getBudgetClass()" [style.width.%]="getUtilizationPct()"></div>
+        </div>
+        <span class="kpi-sub">{{ getUtilizationPct() }}% utilised</span>
+      </div>
+    </mat-card-content>
+  </mat-card>
+
+  <mat-card class="kpi-card credits">
+    <mat-card-content>
+      <div class="kpi-icon-wrap credits"><mat-icon>arrow_circle_down</mat-icon></div>
+      <div class="kpi-body">
+        <span class="kpi-value positive">{{ formatCurrency(analytics.totalCredits) }}</span>
+        <span class="kpi-label">Total Credits</span>
+        <span class="kpi-sub">{{ analytics.transactionCount }} transactions</span>
+      </div>
+    </mat-card-content>
+  </mat-card>
+
+  <mat-card class="kpi-card debits">
+    <mat-card-content>
+      <div class="kpi-icon-wrap debits"><mat-icon>arrow_circle_up</mat-icon></div>
+      <div class="kpi-body">
+        <span class="kpi-value negative">{{ formatCurrency(analytics.totalDebits) }}</span>
+        <span class="kpi-label">Total Debits</span>
+        <span class="kpi-sub">{{ analytics.materialEntryCount }} material entries</span>
+      </div>
+    </mat-card-content>
+  </mat-card>
+
+  <mat-card class="kpi-card material">
+    <mat-card-content>
+      <div class="kpi-icon-wrap material"><mat-icon>inventory_2</mat-icon></div>
+      <div class="kpi-body">
+        <span class="kpi-value">{{ formatCurrency(analytics.materialCost) }}</span>
+        <span class="kpi-label">Material Cost</span>
+        <span class="kpi-sub">{{ analytics.materialEntryCount }} entries</span>
+      </div>
+    </mat-card-content>
+  </mat-card>
+
+  <mat-card class="kpi-card labour">
+    <mat-card-content>
+      <div class="kpi-icon-wrap labour"><mat-icon>engineering</mat-icon></div>
+      <div class="kpi-body">
+        <span class="kpi-value">{{ formatCurrency(analytics.labourCost) }}</span>
+        <span class="kpi-label">Labour Cost</span>
+        <span class="kpi-sub">{{ analytics.labourEntryCount }} entries</span>
+      </div>
+    </mat-card-content>
+  </mat-card>
+
+  <mat-card class="kpi-card" [class.profit]="analytics.profit >= 0" [class.loss]="analytics.profit < 0">
+    <mat-card-content>
+      <div class="kpi-icon-wrap" [class.profit]="analytics.profit >= 0" [class.loss]="analytics.profit < 0">
+        <mat-icon>{{ analytics.profit >= 0 ? 'trending_up' : 'trending_down' }}</mat-icon>
+      </div>
+      <div class="kpi-body">
+        <span class="kpi-value" [class.positive]="analytics.profit >= 0" [class.negative]="analytics.profit < 0">
+          {{ formatCurrency(analytics.profit) }}
+        </span>
+        <span class="kpi-label">Profit</span>
+        <span class="kpi-sub">ROI: {{ analytics.roi.toFixed(1) }}%</span>
+      </div>
+    </mat-card-content>
+  </mat-card>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════
+     CHARTS ROW 1: Monthly Trend + Expense Breakdown
+══════════════════════════════════════════════════════════════ -->
+<div class="charts-row">
+  <mat-card class="chart-card wide">
+    <mat-card-header>
+      <mat-card-title><mat-icon>show_chart</mat-icon> Monthly Expense & Credit Trend</mat-card-title>
+      <mat-card-subtitle>Month-by-month financial activity for this site</mat-card-subtitle>
+    </mat-card-header>
+    <mat-card-content>
+      @if ((analytics.monthlyExpenses?.length ?? 0) === 0 && (analytics.monthlyCredits?.length ?? 0) === 0) {
+        <div class="empty-chart">
+          <mat-icon>bar_chart</mat-icon>
+          <p>No transaction data available for chart</p>
+        </div>
+      } @else {
+        <div class="chart-container">
+          <canvas baseChart [data]="trendChartData" [options]="trendChartOptions" type="line"></canvas>
+        </div>
+      }
+    </mat-card-content>
+  </mat-card>
+
+  <mat-card class="chart-card narrow">
+    <mat-card-header>
+      <mat-card-title><mat-icon>donut_large</mat-icon> Expense Breakdown</mat-card-title>
+      <mat-card-subtitle>Material vs Labour vs Other</mat-card-subtitle>
+    </mat-card-header>
+    <mat-card-content>
+      @if ((analytics.expenseBreakdown?.length ?? 0) === 0) {
+        <div class="empty-chart">
+          <mat-icon>donut_large</mat-icon>
+          <p>No expense data available</p>
+        </div>
+      } @else {
+        <div class="chart-container">
+          <canvas baseChart [data]="doughnutChartData" [options]="doughnutChartOptions" type="doughnut"></canvas>
+        </div>
+        <!-- Breakdown summary rows -->
+        <div class="breakdown-rows">
+          @for (item of analytics.expenseBreakdown; track item.category) {
+            <div class="breakdown-row">
+              <span class="breakdown-label">{{ item.category }}</span>
+              <span class="breakdown-bar-wrap">
+                <span class="breakdown-bar" [class]="item.category.toLowerCase()"
+                  [style.width.%]="analytics.totalDebits ? (item.amount / analytics.totalDebits * 100) : 0">
+                </span>
+              </span>
+              <span class="breakdown-amt">{{ formatCurrency(item.amount) }}</span>
+              <span class="breakdown-pct">({{ analytics.totalDebits ? (item.amount / analytics.totalDebits * 100).toFixed(0) : 0 }}%)</span>
+            </div>
+          }
+        </div>
+      }
+    </mat-card-content>
+  </mat-card>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════
+     DETAIL TABS
+══════════════════════════════════════════════════════════════ -->
+<mat-tab-group animationDuration="200ms" class="detail-tabs">
+
+  <!-- ════ TAB: ALL CHARGES ════ -->
+  <mat-tab>
+    <ng-template mat-tab-label>
+      <mat-icon class="tab-icon">receipt_long</mat-icon>&nbsp;All Charges
+      <span class="tab-badge">{{ allCharges.length }}</span>
+    </ng-template>
+
+    <div class="tab-filters">
+      <mat-form-field appearance="outline" class="filter-search">
+        <mat-label>Search charges…</mat-label>
+        <input matInput [(ngModel)]="chargesSearch" (ngModelChange)="onChargesSearch()">
+        <mat-icon matSuffix>search</mat-icon>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="filter-select">
+        <mat-label>Type</mat-label>
+        <mat-select [(ngModel)]="chargesFilterType" (ngModelChange)="applyChargesFilter()">
+          <mat-option value="">All Types</mat-option>
+          <mat-option value="Transaction">Transaction</mat-option>
+          <mat-option value="Material">Material</mat-option>
+        </mat-select>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="filter-date">
+        <mat-label>From Date</mat-label>
+        <input matInput type="date" [(ngModel)]="filterDateFrom" (ngModelChange)="applyChargesFilter()">
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="filter-date">
+        <mat-label>To Date</mat-label>
+        <input matInput type="date" [(ngModel)]="filterDateTo" (ngModelChange)="applyChargesFilter()">
+      </mat-form-field>
+
+      <button mat-stroked-button (click)="clearChargesFilters()">
+        <mat-icon>filter_list_off</mat-icon> Clear
+      </button>
+    </div>
+
+    <mat-card class="table-card">
+      <mat-card-content>
+        <div class="table-responsive">
+          <table mat-table [dataSource]="chargesDataSource" matSort #chargesSort="matSort" class="charges-table">
+
+            <ng-container matColumnDef="date">
+              <th mat-header-cell *matHeaderCellDef mat-sort-header>Date</th>
+              <td mat-cell *matCellDef="let row">{{ row.date }}</td>
+            </ng-container>
+
+            <ng-container matColumnDef="type">
+              <th mat-header-cell *matHeaderCellDef mat-sort-header>Type</th>
+              <td mat-cell *matCellDef="let row">
+                <span class="type-badge" [class.transaction]="row.type === 'Transaction'" [class.material]="row.type === 'Material'">
+                  <mat-icon class="type-icon">{{ row.type === 'Transaction' ? 'receipt' : 'inventory_2' }}</mat-icon>
+                  {{ row.type }}
+                </span>
+              </td>
+            </ng-container>
+
+            <ng-container matColumnDef="description">
+              <th mat-header-cell *matHeaderCellDef>Description</th>
+              <td mat-cell *matCellDef="let row" class="desc-cell">{{ row.description || '—' }}</td>
+            </ng-container>
+
+            <ng-container matColumnDef="party">
+              <th mat-header-cell *matHeaderCellDef>Party / Shop</th>
+              <td mat-cell *matCellDef="let row">{{ row.party || '—' }}</td>
+            </ng-container>
+
+            <ng-container matColumnDef="amount">
+              <th mat-header-cell *matHeaderCellDef mat-sort-header>Amount</th>
+              <td mat-cell *matCellDef="let row" class="amount-cell">{{ formatCurrency(row.amount) }}</td>
+            </ng-container>
+
+            <tr mat-header-row *matHeaderRowDef="chargesDisplayedColumns"></tr>
+            <tr mat-row *matRowDef="let row; columns: chargesDisplayedColumns;"></tr>
+          </table>
+        </div>
+
+        <!-- Total row -->
+        <div class="total-row">
+          <span>Total ({{ chargesDataSource.filteredData.length }} rows)</span>
+          <span class="total-amount">{{ formatCurrency(getChargesTotal()) }}</span>
+        </div>
+
+        <mat-paginator #chargesPaginator [pageSizeOptions]="[15, 30, 50]" showFirstLastButtons></mat-paginator>
+      </mat-card-content>
+    </mat-card>
+  </mat-tab>
+
+  <!-- ════ TAB: MATERIALS ════ -->
+  <mat-tab>
+    <ng-template mat-tab-label>
+      <mat-icon class="tab-icon">inventory_2</mat-icon>&nbsp;Materials
+      <span class="tab-badge">{{ analytics.topMaterials?.length ?? 0 }}</span>
+    </ng-template>
+
+    <!-- Material bar chart -->
+    @if ((analytics.topMaterials?.length ?? 0) > 0) {
+      <mat-card class="chart-card-full">
+        <mat-card-header>
+          <mat-card-title><mat-icon>bar_chart</mat-icon> Top Materials by Spend</mat-card-title>
+          <mat-card-subtitle>Top 8 most expensive material categories</mat-card-subtitle>
+        </mat-card-header>
+        <mat-card-content>
+          <div class="chart-container mat-chart">
+            <canvas baseChart [data]="matBarChartData" [options]="matBarChartOptions" type="bar"></canvas>
+          </div>
+        </mat-card-content>
+      </mat-card>
+    }
+
+    <mat-card class="table-card">
+      <mat-card-content>
+        <div class="table-responsive">
+          <table mat-table [dataSource]="materialsDataSource" class="materials-table">
+
+            <ng-container matColumnDef="itemName">
+              <th mat-header-cell *matHeaderCellDef>Item Name</th>
+              <td mat-cell *matCellDef="let row" class="item-name-cell">{{ row.itemName }}</td>
+            </ng-container>
+
+            <ng-container matColumnDef="entryCount">
+              <th mat-header-cell *matHeaderCellDef>Entries</th>
+              <td mat-cell *matCellDef="let row">{{ row.entryCount }}</td>
+            </ng-container>
+
+            <ng-container matColumnDef="totalQuantity">
+              <th mat-header-cell *matHeaderCellDef>Total Qty</th>
+              <td mat-cell *matCellDef="let row">{{ row.totalQuantity || '—' }}</td>
+            </ng-container>
+
+            <ng-container matColumnDef="avgRate">
+              <th mat-header-cell *matHeaderCellDef>Avg Rate</th>
+              <td mat-cell *matCellDef="let row" class="amount-cell">{{ formatCurrency(row.avgRate) }}</td>
+            </ng-container>
+
+            <ng-container matColumnDef="totalAmount">
+              <th mat-header-cell *matHeaderCellDef>Total Amount</th>
+              <td mat-cell *matCellDef="let row" class="amount-cell bold">{{ formatCurrency(row.totalAmount) }}</td>
+            </ng-container>
+
+            <tr mat-header-row *matHeaderRowDef="materialsDisplayedColumns"></tr>
+            <tr mat-row *matRowDef="let row; columns: materialsDisplayedColumns;"></tr>
+          </table>
+        </div>
+
+        <!-- Material total -->
+        <div class="total-row">
+          <span>Total Material Cost</span>
+          <span class="total-amount">{{ formatCurrency(analytics.materialCost) }}</span>
+        </div>
+
+        <mat-paginator #matPaginator [pageSizeOptions]="[10, 25]" showFirstLastButtons></mat-paginator>
+      </mat-card-content>
+    </mat-card>
+  </mat-tab>
+
+  <!-- ════ TAB: LABOUR ════ -->
+  <mat-tab>
+    <ng-template mat-tab-label>
+      <mat-icon class="tab-icon">engineering</mat-icon>&nbsp;Labour
+      <span class="tab-badge">{{ analytics.labourEntryCount }}</span>
+    </ng-template>
+
+    <!-- Labour summary cards -->
+    <div class="labour-summary">
+      <mat-card class="mini-kpi">
+        <mat-card-content>
+          <mat-icon class="mini-icon labour">engineering</mat-icon>
+          <div>
+            <div class="mini-value">{{ formatCurrency(analytics.labourCost) }}</div>
+            <div class="mini-label">Total Labour Cost</div>
+          </div>
+        </mat-card-content>
+      </mat-card>
+      <mat-card class="mini-kpi">
+        <mat-card-content>
+          <mat-icon class="mini-icon">format_list_numbered</mat-icon>
+          <div>
+            <div class="mini-value">{{ analytics.labourEntryCount }}</div>
+            <div class="mini-label">Labour Entries</div>
+          </div>
+        </mat-card-content>
+      </mat-card>
+      <mat-card class="mini-kpi">
+        <mat-card-content>
+          <mat-icon class="mini-icon">calculate</mat-icon>
+          <div>
+            <div class="mini-value">
+              {{ analytics.labourEntryCount > 0 ? formatCurrency(analytics.labourCost / analytics.labourEntryCount) : '₹0' }}
+            </div>
+            <div class="mini-label">Avg per Entry</div>
+          </div>
+        </mat-card-content>
+      </mat-card>
+      <mat-card class="mini-kpi">
+        <mat-card-content>
+          <mat-icon class="mini-icon">percent</mat-icon>
+          <div>
+            <div class="mini-value">
+              {{ analytics.totalDebits > 0 ? (analytics.labourCost / analytics.totalDebits * 100).toFixed(1) : '0' }}%
+            </div>
+            <div class="mini-label">% of Total Expense</div>
+          </div>
+        </mat-card-content>
+      </mat-card>
+    </div>
+
+    <mat-card class="table-card">
+      <mat-card-content>
+        @if ((analytics.labourEntries?.length ?? 0) === 0) {
+          <div class="empty-state">
+            <mat-icon>engineering</mat-icon>
+            <p>No labour entries found for this site.<br>
+               Labour transactions are identified by keyword "Labour" or "Labor" in the nature/description.</p>
+          </div>
+        } @else {
+          <div class="table-responsive">
+            <table mat-table [dataSource]="labourDataSource" class="labour-table">
+
+              <ng-container matColumnDef="date">
+                <th mat-header-cell *matHeaderCellDef>Date</th>
+                <td mat-cell *matCellDef="let row">{{ row.date }}</td>
+              </ng-container>
+
+              <ng-container matColumnDef="description">
+                <th mat-header-cell *matHeaderCellDef>Description</th>
+                <td mat-cell *matCellDef="let row" class="desc-cell">{{ row.description || row.nature || '—' }}</td>
+              </ng-container>
+
+              <ng-container matColumnDef="party">
+                <th mat-header-cell *matHeaderCellDef>Party</th>
+                <td mat-cell *matCellDef="let row">{{ row.party || '—' }}</td>
+              </ng-container>
+
+              <ng-container matColumnDef="amount">
+                <th mat-header-cell *matHeaderCellDef>Amount</th>
+                <td mat-cell *matCellDef="let row" class="amount-cell">{{ formatCurrency(row.amount) }}</td>
+              </ng-container>
+
+              <tr mat-header-row *matHeaderRowDef="labourDisplayedColumns"></tr>
+              <tr mat-row *matRowDef="let row; columns: labourDisplayedColumns;"></tr>
+            </table>
+          </div>
+
+          <div class="total-row">
+            <span>Total Labour Cost</span>
+            <span class="total-amount">{{ formatCurrency(analytics.labourCost) }}</span>
+          </div>
+
+          <mat-paginator #labourPaginator [pageSizeOptions]="[10, 25]" showFirstLastButtons></mat-paginator>
+        }
+      </mat-card-content>
+    </mat-card>
+  </mat-tab>
+
+  <!-- ════ TAB: SITE INFO ════ -->
+  <mat-tab>
+    <ng-template mat-tab-label>
+      <mat-icon class="tab-icon">info</mat-icon>&nbsp;Site Info
+    </ng-template>
+
+    <div class="site-info-grid">
+      <mat-card class="info-card">
+        <mat-card-header>
+          <mat-card-title><mat-icon>location_city</mat-icon> Site Details</mat-card-title>
+        </mat-card-header>
+        <mat-card-content>
+          <table class="info-table">
+            <tr><td class="info-key">Site ID</td><td class="info-val mono">{{ analytics.siteId || '—' }}</td></tr>
+            <tr><td class="info-key">Site Name</td><td class="info-val">{{ analytics.siteName }}</td></tr>
+            <tr><td class="info-key">Client</td><td class="info-val">{{ analytics.clientName || '—' }}</td></tr>
+            <tr><td class="info-key">Company</td>
+              <td class="info-val">
+                <span class="company-badge" [class.main]="analytics.company === 'Main'" [class.gst]="analytics.company === 'GST'">
+                  {{ analytics.company }}
+                </span>
+              </td>
+            </tr>
+            <tr><td class="info-key">Address</td><td class="info-val">{{ analytics.address || '—' }}</td></tr>
+            <tr><td class="info-key">Start Date</td><td class="info-val">{{ analytics.dateOfStart || '—' }}</td></tr>
+            <tr><td class="info-key">Due Date</td><td class="info-val">{{ analytics.dueDate || '—' }}</td></tr>
+            <tr><td class="info-key">Status</td>
+              <td class="info-val">
+                <span class="status-chip" [class.active]="analytics.isActive" [class.inactive]="!analytics.isActive">
+                  {{ analytics.isActive ? 'Active' : 'Inactive' }}
+                </span>
+              </td>
+            </tr>
+          </table>
+        </mat-card-content>
+      </mat-card>
+
+      <mat-card class="info-card">
+        <mat-card-header>
+          <mat-card-title><mat-icon>account_balance_wallet</mat-icon> Financial Summary</mat-card-title>
+        </mat-card-header>
+        <mat-card-content>
+          <table class="info-table">
+            <tr><td class="info-key">Quotation</td><td class="info-val bold">{{ formatCurrency(analytics.quotationAmount) }}</td></tr>
+            <tr><td class="info-key">Total Credits</td><td class="info-val positive bold">{{ formatCurrency(analytics.totalCredits) }}</td></tr>
+            <tr><td class="info-key">Total Debits</td><td class="info-val negative bold">{{ formatCurrency(analytics.totalDebits) }}</td></tr>
+            <tr><td class="info-key">Material Cost</td><td class="info-val">{{ formatCurrency(analytics.materialCost) }}</td></tr>
+            <tr><td class="info-key">Labour Cost</td><td class="info-val">{{ formatCurrency(analytics.labourCost) }}</td></tr>
+            <tr><td class="info-key">Other Cost</td><td class="info-val">{{ formatCurrency(analytics.otherCost) }}</td></tr>
+            <tr class="separator"><td colspan="2"></td></tr>
+            <tr>
+              <td class="info-key">Profit</td>
+              <td class="info-val" [class.positive]="analytics.profit >= 0" [class.negative]="analytics.profit < 0">
+                <strong>{{ formatCurrency(analytics.profit) }}</strong>
+              </td>
+            </tr>
+            <tr>
+              <td class="info-key">ROI</td>
+              <td class="info-val" [class.positive]="analytics.roi >= 0" [class.negative]="analytics.roi < 0">
+                <strong>{{ analytics.roi.toFixed(2) }}%</strong>
+              </td>
+            </tr>
+            <tr><td class="info-key">Budget Used</td>
+              <td class="info-val">
+                <span [class]="getBudgetClass()">{{ getUtilizationPct() }}%</span>
+              </td>
+            </tr>
+          </table>
+        </mat-card-content>
+      </mat-card>
+
+      <mat-card class="info-card">
+        <mat-card-header>
+          <mat-card-title><mat-icon>bar_chart</mat-icon> Activity Summary</mat-card-title>
+        </mat-card-header>
+        <mat-card-content>
+          <table class="info-table">
+            <tr><td class="info-key">Total Transactions</td><td class="info-val">{{ analytics.transactionCount }}</td></tr>
+            <tr><td class="info-key">Material Entries</td><td class="info-val">{{ analytics.materialEntryCount }}</td></tr>
+            <tr><td class="info-key">Labour Entries</td><td class="info-val">{{ analytics.labourEntryCount }}</td></tr>
+            <tr><td class="info-key">Total Charges</td><td class="info-val">{{ allCharges.length }}</td></tr>
+          </table>
+        </mat-card-content>
+      </mat-card>
+    </div>
+  </mat-tab>
+
+</mat-tab-group>
+
+} <!-- end @if analytics -->

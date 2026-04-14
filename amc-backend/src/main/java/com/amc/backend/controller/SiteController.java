@@ -1,14 +1,20 @@
 package com.amc.backend.controller;
 
 import com.amc.backend.dto.ApiResponse;
+import com.amc.backend.dto.SiteAnalytics;
+import com.amc.backend.dto.SitesOverview;
 import com.amc.backend.model.Site;
+import com.amc.backend.service.SiteAnalyticsService;
 import com.amc.backend.service.SiteService;
 import javax.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.io.IOException;
 import java.util.List;
 
 @RestController
@@ -17,6 +23,7 @@ import java.util.List;
 public class SiteController {
 
     private final SiteService siteService;
+    private final SiteAnalyticsService siteAnalyticsService;
 
     @GetMapping
     public ResponseEntity<ApiResponse<List<Site>>> getAll() {
@@ -64,5 +71,33 @@ public class SiteController {
     public ResponseEntity<Void> delete(@PathVariable String id) {
         siteService.delete(id);
         return ResponseEntity.noContent().build();
+    }
+
+    // ── R5.1 — Single site analytics ─────────────────────────────────────────
+    @GetMapping("/{id}/analytics")
+    public ResponseEntity<ApiResponse<SiteAnalytics>> getSiteAnalytics(@PathVariable String id) {
+        SiteAnalytics analytics = siteAnalyticsService.getSiteAnalytics(id);
+        return ResponseEntity.ok(ApiResponse.ok(analytics));
+    }
+
+    // ── R5.2 — All sites overview (comparisons, top profitable, etc.) ────────
+    @GetMapping("/analytics/overview")
+    public ResponseEntity<ApiResponse<SitesOverview>> getSitesOverview() {
+        SitesOverview overview = siteAnalyticsService.getSitesOverview();
+        return ResponseEntity.ok(ApiResponse.ok(overview));
+    }
+
+    // ── R5.4 — Export site detail as multi-sheet Excel ───────────────────────
+    @GetMapping("/{id}/export")
+    public ResponseEntity<byte[]> exportSiteDetail(@PathVariable String id) throws IOException {
+        byte[] excelBytes = siteAnalyticsService.exportSiteDetail(id);
+        String filename = "Site_Report_" + id + ".xlsx";
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"));
+        headers.setContentDispositionFormData("attachment", filename);
+        headers.setContentLength(excelBytes.length);
+
+        return new ResponseEntity<>(excelBytes, headers, HttpStatus.OK);
     }
 }

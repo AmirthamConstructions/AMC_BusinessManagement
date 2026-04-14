@@ -1,6 +1,10 @@
 package com.amc.backend.service;
 
+import com.amc.backend.model.Material;
+import com.amc.backend.model.Site;
 import com.amc.backend.model.Transaction;
+import com.amc.backend.repository.MaterialRepository;
+import com.amc.backend.repository.SiteRepository;
 import com.amc.backend.repository.TransactionRepository;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -10,9 +14,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
+import java.time.format.DateTimeFormatter;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -20,117 +23,236 @@ import java.util.stream.Collectors;
 public class DashboardService {
 
     private final TransactionRepository transactionRepository;
+    private final SiteRepository siteRepository;
+    private final MaterialRepository materialRepository;
+
+    private static final DateTimeFormatter MONTH_LABEL = DateTimeFormatter.ofPattern("MMM yyyy");
+    private static final DateTimeFormatter MONTH_KEY   = DateTimeFormatter.ofPattern("yyyy-MM");
 
     public DashboardData getDashboardData(LocalDate startDate, LocalDate endDate) {
         List<Transaction> transactions = transactionRepository.findByDateBetween(startDate, endDate);
 
+        // ── KPIs ──────────────────────────────────────────────────────────────
         double revenue = transactions.stream()
                 .filter(t -> "Credit".equalsIgnoreCase(t.getType()))
-                .mapToDouble(Transaction::getAmount)
+                .mapToDouble(t -> t.getAmount() != null ? t.getAmount() : 0)
                 .sum();
 
         double expenditure = transactions.stream()
                 .filter(t -> "Debit".equalsIgnoreCase(t.getType()))
-                .mapToDouble(Transaction::getAmount)
+                .mapToDouble(t -> t.getAmount() != null ? t.getAmount() : 0)
                 .sum();
 
-        double totalProfit = revenue - expenditure;
+        double netProfit = revenue - expenditure;
 
-        // Company expenses = Debit transactions for company "Main"
-        double companyExpenses = transactions.stream()
+        // Main company figures
+        double mainRevenue = transactions.stream()
+                .filter(t -> "Credit".equalsIgnoreCase(t.getType()) && "Main".equalsIgnoreCase(t.getCompany()))
+                .mapToDouble(t -> t.getAmount() != null ? t.getAmount() : 0).sum();
+
+        double mainExpenditure = transactions.stream()
                 .filter(t -> "Debit".equalsIgnoreCase(t.getType()) && "Main".equalsIgnoreCase(t.getCompany()))
-                .mapToDouble(Transaction::getAmount)
-                .sum();
+                .mapToDouble(t -> t.getAmount() != null ? t.getAmount() : 0).sum();
 
-        double netProfit = totalProfit - companyExpenses;
+        // GST company figures
+        double gstRevenue = transactions.stream()
+                .filter(t -> "Credit".equalsIgnoreCase(t.getType()) && "GST".equalsIgnoreCase(t.getCompany()))
+                .mapToDouble(t -> t.getAmount() != null ? t.getAmount() : 0).sum();
+
+        double gstExpenditure = transactions.stream()
+                .filter(t -> "Debit".equalsIgnoreCase(t.getType()) && "GST".equalsIgnoreCase(t.getCompany()))
+                .mapToDouble(t -> t.getAmount() != null ? t.getAmount() : 0).sum();
+
+        // Material cost in the period
+        List<Material> materials = materialRepository.findByDateBetween(startDate, endDate);
+        double materialCost = materials.stream()
+                .mapToDouble(m -> m.getAmount() != null ? m.getAmount() : 0).sum();
+
+        // Sites
+        List<Site> allSites = siteRepository.findAll();
+        long activeSites   = allSites.stream().filter(s -> Boolean.TRUE.equals(s.getIsActive())).count();
+        long inactiveSites = allSites.size() - activeSites;
 
         DashboardKpis kpis = DashboardKpis.builder()
-                .revenue(revenue)
-                .expenditure(expenditure)
-                .totalProfit(totalProfit)
-                .companyExpenses(companyExpenses)
-                .netProfit(netProfit)
+                .revenue(Math.round(revenue * 100.0) / 100.0)
+                .expenditure(Math.round(expenditure * 100.0) / 100.0)
+                .netProfit(Math.round(netProfit * 100.0) / 100.0)
+                .mainRevenue(Math.round(mainRevenue * 100.0) / 100.0)
+                .mainExpenditure(Math.round(mainExpenditure * 100.0) / 100.0)
+                .gstRevenue(Math.round(gstRevenue * 100.0) / 100.0)
+                .gstExpenditure(Math.round(gstExpenditure * 100.0) / 100.0)
+                .materialCost(Math.round(materialCost * 100.0) / 100.0)
+                .totalSites((int) allSites.size())
+                .activeSites((int) activeSites)
+                .inactiveSites((int) inactiveSites)
+                .transactionCount(transactions.size())
                 .build();
 
-        // Chart 1: Monthly Revenue
-        ChartData chart1 = buildMonthlyChart("Monthly Revenue", transactions, "Credit");
+        // ── Charts ────────────────────────────────────────────────────────────
+        ChartData monthlyRevenue     = buildMonthlyChart("Monthly Revenue",     transactions, "Credit");
+        ChartData monthlyExpenditure = buildMonthlyChart("Monthly Expenditure", transactions, "Debit");
+        ChartData siteExpenses       = buildSiteExpenseChart("Site-wise Expenses (Top 10)", transactions);
+        ChartData companySplit       = buildCompanySplitChart("Main vs GST", transactions);
 
-        // Chart 2: Monthly Expenditure
-        ChartData chart2 = buildMonthlyChart("Monthly Expenditure", transactions, "Debit");
-
-        // Chart 3: Site-wise expenses
-        ChartData chart3 = buildSiteChart("Site-wise Expenses", transactions);
+        // ── Recent Transactions (last 10) ─────────────────────────────────────
+        List<RecentTransaction> recent = transactions.stream()
+                .sorted(Comparator.comparing(t -> t.getDate() != null ? t.getDate() : LocalDate.MIN,
+                        Comparator.reverseOrder()))
+                .limit(10)
+                .map(t -> RecentTransaction.builder()
+                        .date(t.getDate() != null ? t.getDate().toString() : "")
+                        .description(t.getDescription() != null ? t.getDescription() : t.getNature())
+                        .type(t.getType())
+                        .company(t.getCompany())
+                        .siteName(t.getSiteName())
+                        .amount(t.getAmount() != null ? t.getAmount() : 0)
+                        .party(t.getParty())
+                        .build())
+                .collect(Collectors.toList());
 
         return DashboardData.builder()
                 .kpis(kpis)
-                .chart1(chart1)
-                .chart2(chart2)
-                .chart3(chart3)
+                .monthlyRevenue(monthlyRevenue)
+                .monthlyExpenditure(monthlyExpenditure)
+                .siteExpenses(siteExpenses)
+                .companySplit(companySplit)
+                .recentTransactions(recent)
+                .startDate(startDate.toString())
+                .endDate(endDate.toString())
                 .build();
     }
+
+    // ── Chart builders ─────────────────────────────────────────────────────────
 
     private ChartData buildMonthlyChart(String title, List<Transaction> transactions, String type) {
-        Map<String, Double> monthlyData = transactions.stream()
-                .filter(t -> type.equalsIgnoreCase(t.getType()))
+        // Group by "yyyy-MM" so they sort correctly
+        Map<String, Double> raw = new TreeMap<>(transactions.stream()
+                .filter(t -> type.equalsIgnoreCase(t.getType()) && t.getDate() != null)
                 .collect(Collectors.groupingBy(
-                        t -> t.getDate().getMonth().toString(),
-                        Collectors.summingDouble(Transaction::getAmount)
-                ));
+                        t -> t.getDate().format(MONTH_KEY),
+                        Collectors.summingDouble(t -> t.getAmount() != null ? t.getAmount() : 0)
+                )));
+
+        List<String> labels = raw.keySet().stream()
+                .map(k -> LocalDate.parse(k + "-01").format(MONTH_LABEL))
+                .collect(Collectors.toList());
+
+        List<Double> values = new ArrayList<>(raw.values());
 
         return ChartData.builder()
                 .title(title)
-                .categories(new ArrayList<>(monthlyData.keySet()))
-                .values(new ArrayList<>(monthlyData.values()))
+                .dates(labels)
+                .values(values)
                 .build();
     }
 
-    private ChartData buildSiteChart(String title, List<Transaction> transactions) {
+    private ChartData buildSiteExpenseChart(String title, List<Transaction> transactions) {
+        // Debit transactions only, group by siteName, top 10 by total
         Map<String, Double> siteData = transactions.stream()
-                .filter(t -> t.getSiteName() != null && !t.getSiteName().trim().isEmpty())
+                .filter(t -> "Debit".equalsIgnoreCase(t.getType())
+                          && t.getSiteName() != null
+                          && !t.getSiteName().trim().isEmpty())
                 .collect(Collectors.groupingBy(
                         Transaction::getSiteName,
-                        Collectors.summingDouble(Transaction::getAmount)
+                        Collectors.summingDouble(t -> t.getAmount() != null ? t.getAmount() : 0)
                 ));
+
+        // Sort by value desc, take top 10
+        List<Map.Entry<String, Double>> sorted = siteData.entrySet().stream()
+                .sorted(Map.Entry.<String, Double>comparingByValue().reversed())
+                .limit(10)
+                .collect(Collectors.toList());
+
+        List<String> categories = sorted.stream().map(Map.Entry::getKey).collect(Collectors.toList());
+        List<Double> values     = sorted.stream().map(Map.Entry::getValue).collect(Collectors.toList());
 
         return ChartData.builder()
                 .title(title)
-                .categories(new ArrayList<>(siteData.keySet()))
-                .values(new ArrayList<>(siteData.values()))
+                .categories(categories)
+                .values(values)
                 .build();
     }
 
-    // Inner DTOs for dashboard
-    @Data
-    @Builder
-    @NoArgsConstructor
-    @AllArgsConstructor
+    private ChartData buildCompanySplitChart(String title, List<Transaction> transactions) {
+        // Revenue and Expenditure for Main vs GST
+        double mainCredit = transactions.stream()
+                .filter(t -> "Credit".equalsIgnoreCase(t.getType()) && "Main".equalsIgnoreCase(t.getCompany()))
+                .mapToDouble(t -> t.getAmount() != null ? t.getAmount() : 0).sum();
+        double mainDebit = transactions.stream()
+                .filter(t -> "Debit".equalsIgnoreCase(t.getType()) && "Main".equalsIgnoreCase(t.getCompany()))
+                .mapToDouble(t -> t.getAmount() != null ? t.getAmount() : 0).sum();
+        double gstCredit = transactions.stream()
+                .filter(t -> "Credit".equalsIgnoreCase(t.getType()) && "GST".equalsIgnoreCase(t.getCompany()))
+                .mapToDouble(t -> t.getAmount() != null ? t.getAmount() : 0).sum();
+        double gstDebit = transactions.stream()
+                .filter(t -> "Debit".equalsIgnoreCase(t.getType()) && "GST".equalsIgnoreCase(t.getCompany()))
+                .mapToDouble(t -> t.getAmount() != null ? t.getAmount() : 0).sum();
+
+        return ChartData.builder()
+                .title(title)
+                .categories(Arrays.asList("Main Revenue", "Main Expense", "GST Revenue", "GST Expense"))
+                .values(Arrays.asList(
+                        Math.round(mainCredit * 100.0) / 100.0,
+                        Math.round(mainDebit  * 100.0) / 100.0,
+                        Math.round(gstCredit  * 100.0) / 100.0,
+                        Math.round(gstDebit   * 100.0) / 100.0
+                ))
+                .build();
+    }
+
+    // ── DTOs ───────────────────────────────────────────────────────────────────
+
+    @Data @Builder @NoArgsConstructor @AllArgsConstructor
     public static class DashboardData {
         private DashboardKpis kpis;
+        private ChartData monthlyRevenue;
+        private ChartData monthlyExpenditure;
+        private ChartData siteExpenses;
+        private ChartData companySplit;
+        private List<RecentTransaction> recentTransactions;
+        private String startDate;
+        private String endDate;
+        // Legacy fields kept so existing serialisation doesn't break
         private ChartData chart1;
         private ChartData chart2;
         private ChartData chart3;
     }
 
-    @Data
-    @Builder
-    @NoArgsConstructor
-    @AllArgsConstructor
+    @Data @Builder @NoArgsConstructor @AllArgsConstructor
     public static class DashboardKpis {
         private double revenue;
         private double expenditure;
+        private double netProfit;
+        private double mainRevenue;
+        private double mainExpenditure;
+        private double gstRevenue;
+        private double gstExpenditure;
+        private double materialCost;
+        private int totalSites;
+        private int activeSites;
+        private int inactiveSites;
+        private int transactionCount;
+        // Legacy field kept
         private double totalProfit;
         private double companyExpenses;
-        private double netProfit;
     }
 
-    @Data
-    @Builder
-    @NoArgsConstructor
-    @AllArgsConstructor
+    @Data @Builder @NoArgsConstructor @AllArgsConstructor
     public static class ChartData {
         private String title;
         private List<String> categories;
         private List<String> dates;
         private List<Double> values;
+    }
+
+    @Data @Builder @NoArgsConstructor @AllArgsConstructor
+    public static class RecentTransaction {
+        private String date;
+        private String description;
+        private String type;
+        private String company;
+        private String siteName;
+        private double amount;
+        private String party;
     }
 }

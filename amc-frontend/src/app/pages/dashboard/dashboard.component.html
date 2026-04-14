@@ -1,122 +1,259 @@
+<!-- ══ PAGE HEADER ══ -->
 <div class="page-header">
-  <h2>Dashboard</h2>
+  <div class="header-left">
+    <h2><mat-icon class="header-icon">dashboard</mat-icon> Dashboard</h2>
+    @if (data) {
+      <span class="fy-badge">{{ getFinancialYear() }}</span>
+    }
+  </div>
+  <div class="header-actions">
+    <mat-form-field appearance="outline" class="date-field">
+      <mat-label>From</mat-label>
+      <input matInput type="date" [(ngModel)]="filterStartDate">
+    </mat-form-field>
+    <mat-form-field appearance="outline" class="date-field">
+      <mat-label>To</mat-label>
+      <input matInput type="date" [(ngModel)]="filterEndDate">
+    </mat-form-field>
+    <button mat-raised-button color="primary" (click)="applyDateFilter()">
+      <mat-icon>filter_alt</mat-icon> Apply
+    </button>
+    <button mat-stroked-button (click)="clearDateFilter()">
+      <mat-icon>refresh</mat-icon> Reset
+    </button>
+  </div>
 </div>
 
+<!-- ══ LOADING / ERROR ══ -->
 @if (loading) {
   <div class="loading-container"><mat-spinner diameter="48"></mat-spinner></div>
 }
 @if (error) {
-  <div class="error-message">{{ error }}</div>
+  <div class="error-banner"><mat-icon>error_outline</mat-icon> {{ error }}</div>
 }
 
-@if (data) {
-<!-- KPI Cards -->
+@if (data && !loading) {
+
+<!-- ══════════════════════════════════════════════════════════════
+     KPI CARDS — ROW 1: Financial
+══════════════════════════════════════════════════════════════ -->
 <div class="kpi-grid">
-  <mat-card class="kpi-card revenue">
+  <mat-card class="kpi-card revenue" (click)="navigateToTransactions()">
     <mat-card-content>
-      <div class="kpi-icon"><mat-icon>arrow_downward</mat-icon></div>
-      <div class="kpi-info">
+      <div class="kpi-icon-wrap revenue"><mat-icon>arrow_circle_down</mat-icon></div>
+      <div class="kpi-body">
+        <span class="kpi-value positive">{{ formatCurrency(data.kpis.revenue) }}</span>
         <span class="kpi-label">Total Revenue</span>
-        <span class="kpi-value">{{ formatCurrency(data.kpis.revenue) }}</span>
+        <div class="kpi-split">
+          <span>Main: {{ formatCurrency(data.kpis.mainRevenue) }}</span>
+          <span>GST: {{ formatCurrency(data.kpis.gstRevenue) }}</span>
+        </div>
       </div>
     </mat-card-content>
   </mat-card>
 
-  <mat-card class="kpi-card expenditure">
+  <mat-card class="kpi-card expenditure" (click)="navigateToTransactions()">
     <mat-card-content>
-      <div class="kpi-icon"><mat-icon>arrow_upward</mat-icon></div>
-      <div class="kpi-info">
+      <div class="kpi-icon-wrap expenditure"><mat-icon>arrow_circle_up</mat-icon></div>
+      <div class="kpi-body">
+        <span class="kpi-value negative">{{ formatCurrency(data.kpis.expenditure) }}</span>
         <span class="kpi-label">Total Expenditure</span>
-        <span class="kpi-value">{{ formatCurrency(data.kpis.expenditure) }}</span>
-      </div>
-    </mat-card-content>
-  </mat-card>
-
-  <mat-card class="kpi-card profit">
-    <mat-card-content>
-      <div class="kpi-icon"><mat-icon>trending_up</mat-icon></div>
-      <div class="kpi-info">
-        <span class="kpi-label">Total Profit</span>
-        <span class="kpi-value">{{ formatCurrency(data.kpis.totalProfit) }}</span>
-      </div>
-    </mat-card-content>
-  </mat-card>
-
-  <mat-card class="kpi-card company-exp">
-    <mat-card-content>
-      <div class="kpi-icon"><mat-icon>business</mat-icon></div>
-      <div class="kpi-info">
-        <span class="kpi-label">Company Expenses</span>
-        <span class="kpi-value">{{ formatCurrency(data.kpis.companyExpenses) }}</span>
+        <div class="kpi-split">
+          <span>Main: {{ formatCurrency(data.kpis.mainExpenditure) }}</span>
+          <span>GST: {{ formatCurrency(data.kpis.gstExpenditure) }}</span>
+        </div>
       </div>
     </mat-card-content>
   </mat-card>
 
   <mat-card class="kpi-card net-profit">
     <mat-card-content>
-      <div class="kpi-icon"><mat-icon>emoji_events</mat-icon></div>
-      <div class="kpi-info">
+      <div class="kpi-icon-wrap" [class.profit]="data.kpis.netProfit >= 0" [class.loss]="data.kpis.netProfit < 0">
+        <mat-icon>{{ data.kpis.netProfit >= 0 ? 'trending_up' : 'trending_down' }}</mat-icon>
+      </div>
+      <div class="kpi-body">
+        <span class="kpi-value" [class.positive]="data.kpis.netProfit >= 0" [class.negative]="data.kpis.netProfit < 0">
+          {{ formatCurrency(data.kpis.netProfit) }}
+        </span>
         <span class="kpi-label">Net Profit</span>
-        <span class="kpi-value">{{ formatCurrency(data.kpis.netProfit) }}</span>
+        <span class="kpi-sub">Revenue − Expenditure</span>
+      </div>
+    </mat-card-content>
+  </mat-card>
+
+  <mat-card class="kpi-card material">
+    <mat-card-content>
+      <div class="kpi-icon-wrap material"><mat-icon>inventory_2</mat-icon></div>
+      <div class="kpi-body">
+        <span class="kpi-value">{{ formatCurrency(data.kpis.materialCost) }}</span>
+        <span class="kpi-label">Material Cost</span>
+        <span class="kpi-sub">In selected period</span>
+      </div>
+    </mat-card-content>
+  </mat-card>
+
+  <mat-card class="kpi-card sites" (click)="navigateToSites()">
+    <mat-card-content>
+      <div class="kpi-icon-wrap sites"><mat-icon>location_city</mat-icon></div>
+      <div class="kpi-body">
+        <span class="kpi-value">{{ data.kpis.totalSites }}</span>
+        <span class="kpi-label">Total Sites</span>
+        <div class="kpi-split">
+          <span class="active-badge">{{ data.kpis.activeSites }} Active</span>
+          <span class="inactive-badge">{{ data.kpis.inactiveSites }} Inactive</span>
+        </div>
+      </div>
+    </mat-card-content>
+  </mat-card>
+
+  <mat-card class="kpi-card transactions" (click)="navigateToTransactions()">
+    <mat-card-content>
+      <div class="kpi-icon-wrap transactions"><mat-icon>receipt_long</mat-icon></div>
+      <div class="kpi-body">
+        <span class="kpi-value">{{ data.kpis.transactionCount }}</span>
+        <span class="kpi-label">Transactions</span>
+        <span class="kpi-sub">In selected period</span>
       </div>
     </mat-card-content>
   </mat-card>
 </div>
 
-<!-- Chart Placeholders -->
-<div class="charts-grid">
+<!-- ══════════════════════════════════════════════════════════════
+     CHARTS ROW 1: Monthly Trend + Company Split
+══════════════════════════════════════════════════════════════ -->
+<div class="charts-row two-col">
   <mat-card class="chart-card">
-    <mat-card-header><mat-card-title>{{ data.chart1.title }}</mat-card-title></mat-card-header>
+    <mat-card-header>
+      <mat-card-title><mat-icon>show_chart</mat-icon> Monthly Revenue vs Expenditure</mat-card-title>
+      <mat-card-subtitle>Month-by-month financial trend for the selected period</mat-card-subtitle>
+    </mat-card-header>
     <mat-card-content>
-      <div class="chart-placeholder">
-        <div class="bar-chart">
-          @for (val of data.chart1.values; track $index) {
-            <div class="bar" [style.height.%]="(val / 1700000) * 100"
-              [matTooltip]="formatCurrency(val)">
-            </div>
-          }
+      @if ((data.monthlyRevenue?.dates?.length ?? 0) === 0) {
+        <div class="empty-chart"><mat-icon>bar_chart</mat-icon><p>No data for selected period</p></div>
+      } @else {
+        <div class="chart-container">
+          <canvas baseChart [data]="trendChartData" [options]="trendChartOptions" type="line"></canvas>
         </div>
-        <div class="bar-labels">
-          @for (label of data.chart1.dates; track $index) {
-            <span>{{ label.substring(0, 3) }}</span>
-          }
-        </div>
-      </div>
+      }
     </mat-card-content>
   </mat-card>
 
   <mat-card class="chart-card">
-    <mat-card-header><mat-card-title>{{ data.chart2.title }}</mat-card-title></mat-card-header>
+    <mat-card-header>
+      <mat-card-title><mat-icon>compare_arrows</mat-icon> Main vs GST Company Split</mat-card-title>
+      <mat-card-subtitle>Revenue and expenditure comparison by company</mat-card-subtitle>
+    </mat-card-header>
     <mat-card-content>
-      <div class="horizontal-bars">
-        @for (cat of data.chart2.categories; track $index) {
-          <div class="h-bar-row">
-            <span class="h-bar-label">{{ cat }}</span>
-            <div class="h-bar-track">
-              <div class="h-bar-fill" [style.width.%]="data.chart2.values[$index]"></div>
-            </div>
-            <span class="h-bar-value">{{ data.chart2.values[$index] }}%</span>
-          </div>
-        }
+      <div class="chart-container">
+        <canvas baseChart [data]="splitChartData" [options]="splitChartOptions" type="bar"></canvas>
       </div>
-    </mat-card-content>
-  </mat-card>
-
-  <mat-card class="chart-card">
-    <mat-card-header><mat-card-title>{{ data.chart3.title }}</mat-card-title></mat-card-header>
-    <mat-card-content>
-      <div class="horizontal-bars">
-        @for (cat of data.chart3.categories; track $index) {
-          <div class="h-bar-row">
-            <span class="h-bar-label">{{ cat }}</span>
-            <div class="h-bar-track">
-              <div class="h-bar-fill exp" [style.width.%]="(data.chart3.values[$index] / 920000) * 100"></div>
-            </div>
-            <span class="h-bar-value">{{ formatCurrency(data.chart3.values[$index]) }}</span>
-          </div>
-        }
+      <!-- Split summary -->
+      <div class="split-summary">
+        <div class="split-col main">
+          <span class="split-label">Main</span>
+          <span class="split-rev">Rev: {{ formatCurrency(data.kpis.mainRevenue) }}</span>
+          <span class="split-exp">Exp: {{ formatCurrency(data.kpis.mainExpenditure) }}</span>
+          <span class="split-net" [class.positive]="data.kpis.mainRevenue >= data.kpis.mainExpenditure"
+                                  [class.negative]="data.kpis.mainRevenue < data.kpis.mainExpenditure">
+            Net: {{ formatCurrency(data.kpis.mainRevenue - data.kpis.mainExpenditure) }}
+          </span>
+        </div>
+        <mat-divider [vertical]="true"></mat-divider>
+        <div class="split-col gst">
+          <span class="split-label">GST</span>
+          <span class="split-rev">Rev: {{ formatCurrency(data.kpis.gstRevenue) }}</span>
+          <span class="split-exp">Exp: {{ formatCurrency(data.kpis.gstExpenditure) }}</span>
+          <span class="split-net" [class.positive]="data.kpis.gstRevenue >= data.kpis.gstExpenditure"
+                                  [class.negative]="data.kpis.gstRevenue < data.kpis.gstExpenditure">
+            Net: {{ formatCurrency(data.kpis.gstRevenue - data.kpis.gstExpenditure) }}
+          </span>
+        </div>
       </div>
     </mat-card-content>
   </mat-card>
 </div>
-}
+
+<!-- ══════════════════════════════════════════════════════════════
+     CHARTS ROW 2: Site-wise Expenses
+══════════════════════════════════════════════════════════════ -->
+<div class="charts-row one-col">
+  <mat-card class="chart-card">
+    <mat-card-header>
+      <mat-card-title><mat-icon>bar_chart</mat-icon> Site-wise Expenses (Top 10)</mat-card-title>
+      <mat-card-subtitle>Debit transactions grouped by site — click a site to view full analytics</mat-card-subtitle>
+    </mat-card-header>
+    <mat-card-content>
+      @if ((data.siteExpenses?.categories?.length ?? 0) === 0) {
+        <div class="empty-chart">
+          <mat-icon>location_off</mat-icon>
+          <p>No site-tagged transactions in this period</p>
+        </div>
+      } @else {
+        <div class="chart-container tall">
+          <canvas baseChart [data]="siteChartData" [options]="siteChartOptions" type="bar"></canvas>
+        </div>
+      }
+    </mat-card-content>
+  </mat-card>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════
+     RECENT TRANSACTIONS
+══════════════════════════════════════════════════════════════ -->
+<mat-card class="recent-card">
+  <mat-card-header>
+    <mat-card-title><mat-icon>history</mat-icon> Recent Transactions</mat-card-title>
+    <mat-card-subtitle>Last 10 transactions in the selected period</mat-card-subtitle>
+    <div class="card-header-action">
+      <button mat-stroked-button (click)="navigateToTransactions()">
+        View All <mat-icon>arrow_forward</mat-icon>
+      </button>
+    </div>
+  </mat-card-header>
+  <mat-card-content>
+    @if ((data.recentTransactions?.length ?? 0) === 0) {
+      <div class="empty-chart"><mat-icon>receipt_long</mat-icon><p>No transactions in this period</p></div>
+    } @else {
+      <div class="table-responsive">
+        <table class="recent-table">
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Description</th>
+              <th>Party</th>
+              <th>Site</th>
+              <th>Company</th>
+              <th>Type</th>
+              <th class="amt-col">Amount</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (txn of data.recentTransactions; track $index) {
+              <tr>
+                <td class="date-cell">{{ txn.date }}</td>
+                <td class="desc-cell">{{ txn.description || '—' }}</td>
+                <td>{{ txn.party || '—' }}</td>
+                <td>{{ txn.siteName || '—' }}</td>
+                <td>
+                  <span class="company-badge" [class.main]="txn.company === 'Main'" [class.gst]="txn.company === 'GST'">
+                    {{ txn.company }}
+                  </span>
+                </td>
+                <td>
+                  <span class="type-badge" [class.credit]="txn.type === 'Credit'" [class.debit]="txn.type === 'Debit'">
+                    {{ txn.type }}
+                  </span>
+                </td>
+                <td class="amt-col" [class.positive]="txn.type === 'Credit'" [class.negative]="txn.type === 'Debit'">
+                  {{ formatCurrency(txn.amount) }}
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  </mat-card-content>
+</mat-card>
+
+} <!-- end @if data -->
