@@ -1,7 +1,10 @@
 import { Component, OnInit, ViewChild, effect } from '@angular/core';
+import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { SharedModule } from '../../shared/shared.module';
 import { TransactionService } from '../../services/transaction.service';
 import { Transaction } from '../../models/transaction.model';
+import { SiteService } from '../../services/site.service';
+import { Site } from '../../models/site.model';
 import { CompanyFilterService, CompanyFilter } from '../../services/company-filter.service';
 import { MatTableDataSource } from '@angular/material/table';
 import { MatPaginator } from '@angular/material/paginator';
@@ -29,12 +32,21 @@ export class TransactionsComponent implements OnInit {
     totalCredits: 0, totalDebits: 0, totalNet: 0
   };
 
+  // Form state
+  showForm = false;
+  editingId: string | null = null;
+  txnForm!: FormGroup;
+  saving = false;
+  sites: Site[] = [];
+
   @ViewChild(MatPaginator) paginator!: MatPaginator;
   @ViewChild(MatSort) sort!: MatSort;
 
   constructor(
     private txnService: TransactionService,
+    private siteService: SiteService,
     private snackBar: MatSnackBar,
+    private fb: FormBuilder,
     public companyFilter: CompanyFilterService
   ) {
     // React to global company filter changes
@@ -45,6 +57,8 @@ export class TransactionsComponent implements OnInit {
   }
 
   ngOnInit(): void {
+    this.initForm();
+    this.loadSites();
     this.loadData();
   }
 
@@ -126,5 +140,100 @@ export class TransactionsComponent implements OnInit {
 
   formatCurrency(val: number): string {
     return '₹' + (val || 0).toLocaleString('en-IN', { maximumFractionDigits: 0 });
+  }
+
+  // ── Form methods ─────────────────────────────────────────────
+
+  initForm(): void {
+    this.txnForm = this.fb.group({
+      date: ['', Validators.required],
+      company: ['Main', Validators.required],
+      siteId: [''],
+      siteName: [''],
+      type: ['Debit', Validators.required],
+      nature: [''],
+      description: [''],
+      amount: [null, [Validators.required, Validators.min(0.01)]],
+      party: [''],
+      invoiceNo: [''],
+      gstNo: [''],
+      companyAccount: [''],
+      modeOfPayment: [''],
+      notes: ['']
+    });
+  }
+
+  loadSites(): void {
+    this.siteService.getAll().subscribe({
+      next: (sites) => this.sites = sites,
+      error: () => {} // silent
+    });
+  }
+
+  onSiteChange(): void {
+    const siteId = this.txnForm.get('siteId')?.value;
+    const site = this.sites.find(s => s.id === siteId);
+    if (site) {
+      this.txnForm.patchValue({ siteName: site.name });
+    }
+  }
+
+  openAddForm(): void {
+    this.editingId = null;
+    this.txnForm.reset({ company: 'Main', type: 'Debit' });
+    this.showForm = true;
+  }
+
+  openEditForm(txn: Transaction): void {
+    this.editingId = txn.id;
+    this.txnForm.patchValue({
+      date: txn.date,
+      company: txn.company,
+      siteId: txn.siteId || '',
+      siteName: txn.siteName || '',
+      type: txn.type,
+      nature: txn.nature || '',
+      description: txn.description || '',
+      amount: txn.amount,
+      party: txn.party || '',
+      invoiceNo: txn.invoiceNo || '',
+      gstNo: txn.gstNo || '',
+      companyAccount: txn.companyAccount || '',
+      modeOfPayment: txn.modeOfPayment || '',
+      notes: txn.notes || ''
+    });
+    this.showForm = true;
+  }
+
+  cancelForm(): void {
+    this.showForm = false;
+    this.editingId = null;
+  }
+
+  saveTransaction(): void {
+    if (this.txnForm.invalid) {
+      this.txnForm.markAllAsTouched();
+      return;
+    }
+    this.saving = true;
+    const payload = this.txnForm.value;
+
+    const op = this.editingId
+      ? this.txnService.update(this.editingId, payload)
+      : this.txnService.create(payload);
+
+    op.subscribe({
+      next: () => {
+        this.snackBar.open(this.editingId ? 'Transaction updated' : 'Transaction created', 'OK', { duration: 2000 });
+        this.showForm = false;
+        this.editingId = null;
+        this.saving = false;
+        this.loadData();
+      },
+      error: () => {
+        this.snackBar.open('Failed to save transaction', 'OK', { duration: 3000 });
+        this.saving = false;
+      }
+    });
   }
 }
