@@ -27,6 +27,7 @@ export const routes: Routes = [
       { path: 'gst-inward', loadComponent: () => import('./pages/gst-inward/gst-inward.component').then(m => m.GstInwardComponent) },
       { path: 'gst-reconciliation', loadComponent: () => import('./pages/gst-reconciliation/gst-reconciliation.component').then(m => m.GstReconciliationComponent) },
       { path: 'materials', loadComponent: () => import('./pages/materials/materials.component').then(m => m.MaterialsComponent) },
+      { path: 'material-analytics', loadComponent: () => import('./pages/material-analytics/material-analytics.component').then(m => m.MaterialAnalyticsComponent) },
       { path: 'invoices', loadComponent: () => import('./pages/invoices/invoices.component').then(m => m.InvoicesComponent) },
       { path: 'dimensions', loadComponent: () => import('./pages/dimensions/dimensions.component').then(m => m.DimensionsComponent) },
     ]

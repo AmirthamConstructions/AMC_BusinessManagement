@@ -1,0 +1,466 @@
+<div class="page-header">
+  <h2>Material Analytics</h2>
+  <button mat-raised-button color="primary" (click)="exportExcel()">
+    <mat-icon>download</mat-icon> Export Excel
+  </button>
+</div>
+
+<!-- Overpayment Alerts (R4.4) -->
+@if (overpaymentAlerts.length > 0) {
+  <div class="alerts-section">
+    <mat-card class="alert-card">
+      <mat-card-content>
+        <div class="alert-header">
+          <mat-icon color="warn">warning</mat-icon>
+          <strong>Overpayment Alerts ({{ overpaymentAlerts.length }})</strong>
+        </div>
+        <div class="alert-list">
+          @for (alert of overpaymentAlerts; track alert.itemName) {
+            <div class="alert-item">
+              <span class="alert-name">{{ alert.itemName }}</span>
+              <span class="alert-detail">
+                Last: {{ formatCurrency(alert.lastRate) }} vs Expected: {{ formatCurrency(alert.expectedRate) }}
+                <span class="overpay-badge">+{{ alert.overpayPct }}%</span>
+              </span>
+            </div>
+          }
+        </div>
+      </mat-card-content>
+    </mat-card>
+  </div>
+}
+
+<mat-tab-group (selectedIndexChange)="onTabChange($event)" animationDuration="200ms">
+
+  <!-- ═══════════════════════════════════════════════════════════════════ -->
+  <!--  TAB 1: Rate Analysis (R4.1)                                      -->
+  <!-- ═══════════════════════════════════════════════════════════════════ -->
+  <mat-tab label="Rate Analysis">
+    <div class="tab-content">
+      @if (loading && !rateAnalysis) {
+        <div class="loading-container"><mat-spinner diameter="40"></mat-spinner></div>
+      }
+
+      @if (rateAnalysis) {
+        <div class="kpi-row">
+          <mat-card class="kpi-card">
+            <div class="kpi-value">{{ rateAnalysis.totalDistinctItems }}</div>
+            <div class="kpi-label">Distinct Items</div>
+          </mat-card>
+        </div>
+
+        <mat-form-field appearance="outline" class="search-field">
+          <mat-label>Search items</mat-label>
+          <input matInput [(ngModel)]="rateSearchText" (keyup)="applyRateFilter()">
+          <mat-icon matSuffix>search</mat-icon>
+        </mat-form-field>
+
+        <div class="table-responsive">
+          <table mat-table [dataSource]="rateDataSource" matSort #rateSort="matSort" class="full-width">
+            <ng-container matColumnDef="itemName">
+              <th mat-header-cell *matHeaderCellDef mat-sort-header>Item Name</th>
+              <td mat-cell *matCellDef="let row">
+                <a class="item-link" (click)="selectRateItem(row)">{{ row.itemName }}</a>
+              </td>
+            </ng-container>
+            <ng-container matColumnDef="minRate">
+              <th mat-header-cell *matHeaderCellDef mat-sort-header>Min Rate</th>
+              <td mat-cell *matCellDef="let row" class="amount">{{ formatCurrency(row.minRate) }}</td>
+            </ng-container>
+            <ng-container matColumnDef="maxRate">
+              <th mat-header-cell *matHeaderCellDef mat-sort-header>Max Rate</th>
+              <td mat-cell *matCellDef="let row" class="amount">{{ formatCurrency(row.maxRate) }}</td>
+            </ng-container>
+            <ng-container matColumnDef="avgRate">
+              <th mat-header-cell *matHeaderCellDef mat-sort-header>Avg Rate</th>
+              <td mat-cell *matCellDef="let row" class="amount">{{ formatCurrency(row.avgRate) }}</td>
+            </ng-container>
+            <ng-container matColumnDef="lastRate">
+              <th mat-header-cell *matHeaderCellDef mat-sort-header>Last Rate</th>
+              <td mat-cell *matCellDef="let row" class="amount">{{ formatCurrency(row.lastRate) }}</td>
+            </ng-container>
+            <ng-container matColumnDef="trend">
+              <th mat-header-cell *matHeaderCellDef>Trend</th>
+              <td mat-cell *matCellDef="let row">
+                <mat-icon [style.color]="getTrendColor(row.trend)">{{ getTrendIcon(row.trend) }}</mat-icon>
+              </td>
+            </ng-container>
+            <ng-container matColumnDef="purchaseCount">
+              <th mat-header-cell *matHeaderCellDef mat-sort-header>Purchases</th>
+              <td mat-cell *matCellDef="let row">{{ row.purchaseCount }}</td>
+            </ng-container>
+            <ng-container matColumnDef="totalAmount">
+              <th mat-header-cell *matHeaderCellDef mat-sort-header>Total Spent</th>
+              <td mat-cell *matCellDef="let row" class="amount total">{{ formatCurrency(row.totalAmount) }}</td>
+            </ng-container>
+            <tr mat-header-row *matHeaderRowDef="rateColumns"></tr>
+            <tr mat-row *matRowDef="let row; columns: rateColumns;" class="clickable-row" (click)="selectRateItem(row)"></tr>
+          </table>
+        </div>
+        <mat-paginator #ratePaginator [pageSizeOptions]="[10, 25, 50]" showFirstLastButtons></mat-paginator>
+
+        <!-- Rate History Chart (inline) -->
+        @if (selectedRateItem) {
+          <mat-card class="chart-card">
+            <mat-card-content>
+              <div class="chart-header">
+                <h3>Rate History — {{ selectedRateItem.itemName }}</h3>
+                <button mat-icon-button (click)="closeRateChart()"><mat-icon>close</mat-icon></button>
+              </div>
+              <div class="chart-container">
+                <canvas id="rateHistoryChart"></canvas>
+              </div>
+            </mat-card-content>
+          </mat-card>
+        }
+      }
+    </div>
+  </mat-tab>
+
+  <!-- ═══════════════════════════════════════════════════════════════════ -->
+  <!--  TAB 2: Usage Report (R4.2)                                       -->
+  <!-- ═══════════════════════════════════════════════════════════════════ -->
+  <mat-tab label="Usage Report">
+    <div class="tab-content">
+      <div class="filter-row">
+        <mat-form-field appearance="outline">
+          <mat-label>Select Site</mat-label>
+          <mat-select [(ngModel)]="selectedUsageSiteId" (selectionChange)="loadUsageReport()">
+            @for (site of sites; track site.id) {
+              <mat-option [value]="site.id">{{ site.name }} ({{ site.company }})</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+      </div>
+
+      @if (loading && !usageReport) {
+        <div class="loading-container"><mat-spinner diameter="40"></mat-spinner></div>
+      }
+
+      @if (usageReport) {
+        <div class="kpi-row">
+          <mat-card class="kpi-card">
+            <div class="kpi-value">{{ formatCurrency(usageReport.totalMaterialCost) }}</div>
+            <div class="kpi-label">Total Material Cost</div>
+          </mat-card>
+          <mat-card class="kpi-card">
+            <div class="kpi-value">{{ usageReport.distinctItemCount }}</div>
+            <div class="kpi-label">Distinct Items</div>
+          </mat-card>
+        </div>
+
+        <div class="chart-container" style="max-height: 350px;">
+          <canvas id="usageChart"></canvas>
+        </div>
+
+        <div class="table-responsive">
+          <table mat-table [dataSource]="usageDataSource" class="full-width">
+            <ng-container matColumnDef="itemName">
+              <th mat-header-cell *matHeaderCellDef>Item Name</th>
+              <td mat-cell *matCellDef="let row">{{ row.itemName }}</td>
+            </ng-container>
+            <ng-container matColumnDef="totalQuantity">
+              <th mat-header-cell *matHeaderCellDef>Total Qty</th>
+              <td mat-cell *matCellDef="let row">{{ row.totalQuantity }}</td>
+            </ng-container>
+            <ng-container matColumnDef="totalAmount">
+              <th mat-header-cell *matHeaderCellDef>Total Amount</th>
+              <td mat-cell *matCellDef="let row" class="amount total">{{ formatCurrency(row.totalAmount) }}</td>
+            </ng-container>
+            <ng-container matColumnDef="avgRate">
+              <th mat-header-cell *matHeaderCellDef>Avg Rate</th>
+              <td mat-cell *matCellDef="let row" class="amount">{{ formatCurrency(row.avgRate) }}</td>
+            </ng-container>
+            <ng-container matColumnDef="purchaseCount">
+              <th mat-header-cell *matHeaderCellDef>Purchases</th>
+              <td mat-cell *matCellDef="let row">{{ row.purchaseCount }}</td>
+            </ng-container>
+            <ng-container matColumnDef="lastPurchaseDate">
+              <th mat-header-cell *matHeaderCellDef>Last Purchase</th>
+              <td mat-cell *matCellDef="let row">{{ row.lastPurchaseDate }}</td>
+            </ng-container>
+            <tr mat-header-row *matHeaderRowDef="usageColumns"></tr>
+            <tr mat-row *matRowDef="let row; columns: usageColumns;"></tr>
+          </table>
+        </div>
+      }
+    </div>
+  </mat-tab>
+
+  <!-- ═══════════════════════════════════════════════════════════════════ -->
+  <!--  TAB 3: ROI & Breakeven (R4.3)                                    -->
+  <!-- ═══════════════════════════════════════════════════════════════════ -->
+  <mat-tab label="ROI & Breakeven">
+    <div class="tab-content">
+      <div class="filter-row">
+        <mat-form-field appearance="outline">
+          <mat-label>Select Site</mat-label>
+          <mat-select [(ngModel)]="selectedRoiSiteId" (selectionChange)="loadRoiAnalysis()">
+            @for (site of sites; track site.id) {
+              <mat-option [value]="site.id">{{ site.name }} ({{ site.company }})</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+      </div>
+
+      @if (loading && !roiAnalysis) {
+        <div class="loading-container"><mat-spinner diameter="40"></mat-spinner></div>
+      }
+
+      @if (roiAnalysis) {
+        <div class="kpi-row">
+          <mat-card class="kpi-card">
+            <div class="kpi-value">{{ formatCurrency(roiAnalysis.quotation) }}</div>
+            <div class="kpi-label">Quotation</div>
+          </mat-card>
+          <mat-card class="kpi-card">
+            <div class="kpi-value">{{ formatCurrency(roiAnalysis.totalCost) }}</div>
+            <div class="kpi-label">Total Cost</div>
+          </mat-card>
+          <mat-card class="kpi-card" [class.profit]="roiAnalysis.isProfitable" [class.loss]="!roiAnalysis.isProfitable">
+            <div class="kpi-value">{{ formatCurrency(roiAnalysis.profit) }}</div>
+            <div class="kpi-label">{{ roiAnalysis.isProfitable ? 'Profit' : 'Loss' }}</div>
+          </mat-card>
+          <mat-card class="kpi-card" [class.profit]="roiAnalysis.roi > 0" [class.loss]="roiAnalysis.roi <= 0">
+            <div class="kpi-value">{{ roiAnalysis.roi | number:'1.1-1' }}%</div>
+            <div class="kpi-label">ROI</div>
+          </mat-card>
+        </div>
+
+        <!-- Cost breakdown table -->
+        <mat-card class="breakdown-card">
+          <mat-card-content>
+            <h3>Cost Breakdown</h3>
+            <table class="breakdown-table">
+              <tr><td>Material Cost</td><td class="amount">{{ formatCurrency(roiAnalysis.materialCost) }}</td></tr>
+              <tr><td>Labour Cost</td><td class="amount">{{ formatCurrency(roiAnalysis.labourCost) }}</td></tr>
+              <tr><td>Other Cost</td><td class="amount">{{ formatCurrency(roiAnalysis.otherCost) }}</td></tr>
+              <tr class="total-row"><td><strong>Total Cost (Breakeven Point)</strong></td><td class="amount"><strong>{{ formatCurrency(roiAnalysis.totalCost) }}</strong></td></tr>
+              <tr><td>Quotation Amount</td><td class="amount">{{ formatCurrency(roiAnalysis.quotation) }}</td></tr>
+              <tr class="total-row" [class.profit-text]="roiAnalysis.isProfitable" [class.loss-text]="!roiAnalysis.isProfitable">
+                <td><strong>{{ roiAnalysis.isProfitable ? 'Profit' : 'Loss' }}</strong></td>
+                <td class="amount"><strong>{{ formatCurrency(roiAnalysis.profit) }}</strong></td>
+              </tr>
+            </table>
+          </mat-card-content>
+        </mat-card>
+
+        <div class="chart-container" style="max-width: 400px; margin: 24px auto;">
+          <canvas id="roiChart"></canvas>
+        </div>
+      }
+    </div>
+  </mat-tab>
+
+  <!-- ═══════════════════════════════════════════════════════════════════ -->
+  <!--  TAB 4: Price List (R4.4)                                         -->
+  <!-- ═══════════════════════════════════════════════════════════════════ -->
+  <mat-tab label="Price List">
+    <div class="tab-content">
+      <div class="tab-header">
+        <mat-form-field appearance="outline" class="search-field">
+          <mat-label>Search price list</mat-label>
+          <input matInput [(ngModel)]="priceSearchText" (keyup)="applyPriceFilter()">
+          <mat-icon matSuffix>search</mat-icon>
+        </mat-form-field>
+        <button mat-raised-button color="primary" (click)="openPriceForm()">
+          <mat-icon>add</mat-icon> Add Item
+        </button>
+      </div>
+
+      <!-- Price Form (inline) -->
+      @if (showPriceForm) {
+        <mat-card class="form-card">
+          <mat-card-content>
+            <h3>{{ editingPriceItem ? 'Edit' : 'Add' }} Price List Item</h3>
+            <div class="form-grid">
+              <mat-form-field appearance="outline">
+                <mat-label>Item Name</mat-label>
+                <input matInput [(ngModel)]="priceForm.itemName" required>
+              </mat-form-field>
+              <mat-form-field appearance="outline">
+                <mat-label>Category</mat-label>
+                <mat-select [(ngModel)]="priceForm.category">
+                  @for (cat of categories; track cat) {
+                    <mat-option [value]="cat">{{ cat }}</mat-option>
+                  }
+                </mat-select>
+              </mat-form-field>
+              <mat-form-field appearance="outline">
+                <mat-label>Expected Rate (₹)</mat-label>
+                <input matInput type="number" [(ngModel)]="priceForm.expectedRate" required>
+              </mat-form-field>
+              <mat-form-field appearance="outline">
+                <mat-label>Min Rate (₹)</mat-label>
+                <input matInput type="number" [(ngModel)]="priceForm.minRate">
+              </mat-form-field>
+              <mat-form-field appearance="outline">
+                <mat-label>Max Rate (₹)</mat-label>
+                <input matInput type="number" [(ngModel)]="priceForm.maxRate">
+              </mat-form-field>
+              <mat-form-field appearance="outline">
+                <mat-label>Unit</mat-label>
+                <mat-select [(ngModel)]="priceForm.unit">
+                  @for (u of units; track u) {
+                    <mat-option [value]="u">{{ u }}</mat-option>
+                  }
+                </mat-select>
+              </mat-form-field>
+              <mat-form-field appearance="outline">
+                <mat-label>Supplier</mat-label>
+                <input matInput [(ngModel)]="priceForm.supplier">
+              </mat-form-field>
+              <mat-form-field appearance="outline">
+                <mat-label>Notes</mat-label>
+                <input matInput [(ngModel)]="priceForm.notes">
+              </mat-form-field>
+            </div>
+            <div class="form-actions">
+              <button mat-button (click)="closePriceForm()">Cancel</button>
+              <button mat-raised-button color="primary" (click)="savePriceItem()">
+                {{ editingPriceItem ? 'Update' : 'Create' }}
+              </button>
+            </div>
+          </mat-card-content>
+        </mat-card>
+      }
+
+      @if (loading && priceList.length === 0) {
+        <div class="loading-container"><mat-spinner diameter="40"></mat-spinner></div>
+      }
+
+      <div class="table-responsive">
+        <table mat-table [dataSource]="priceDataSource" class="full-width">
+          <ng-container matColumnDef="itemName">
+            <th mat-header-cell *matHeaderCellDef>Item Name</th>
+            <td mat-cell *matCellDef="let row">{{ row.itemName }}</td>
+          </ng-container>
+          <ng-container matColumnDef="category">
+            <th mat-header-cell *matHeaderCellDef>Category</th>
+            <td mat-cell *matCellDef="let row">
+              <span class="category-badge">{{ row.category }}</span>
+            </td>
+          </ng-container>
+          <ng-container matColumnDef="expectedRate">
+            <th mat-header-cell *matHeaderCellDef>Expected Rate</th>
+            <td mat-cell *matCellDef="let row" class="amount">{{ formatCurrency(row.expectedRate) }}</td>
+          </ng-container>
+          <ng-container matColumnDef="minRate">
+            <th mat-header-cell *matHeaderCellDef>Min Rate</th>
+            <td mat-cell *matCellDef="let row" class="amount">{{ row.minRate ? formatCurrency(row.minRate) : '—' }}</td>
+          </ng-container>
+          <ng-container matColumnDef="maxRate">
+            <th mat-header-cell *matHeaderCellDef>Max Rate</th>
+            <td mat-cell *matCellDef="let row" class="amount">{{ row.maxRate ? formatCurrency(row.maxRate) : '—' }}</td>
+          </ng-container>
+          <ng-container matColumnDef="unit">
+            <th mat-header-cell *matHeaderCellDef>Unit</th>
+            <td mat-cell *matCellDef="let row">{{ row.unit }}</td>
+          </ng-container>
+          <ng-container matColumnDef="supplier">
+            <th mat-header-cell *matHeaderCellDef>Supplier</th>
+            <td mat-cell *matCellDef="let row">{{ row.supplier || '—' }}</td>
+          </ng-container>
+          <ng-container matColumnDef="actions">
+            <th mat-header-cell *matHeaderCellDef>Actions</th>
+            <td mat-cell *matCellDef="let row">
+              <button mat-icon-button color="primary" matTooltip="Edit" (click)="openPriceForm(row)"><mat-icon>edit</mat-icon></button>
+              <button mat-icon-button color="warn" matTooltip="Delete" (click)="deletePriceItem(row.id)"><mat-icon>delete</mat-icon></button>
+            </td>
+          </ng-container>
+          <tr mat-header-row *matHeaderRowDef="priceColumns"></tr>
+          <tr mat-row *matRowDef="let row; columns: priceColumns;"></tr>
+        </table>
+      </div>
+      <mat-paginator #pricePaginator [pageSizeOptions]="[10, 25, 50]" showFirstLastButtons></mat-paginator>
+    </div>
+  </mat-tab>
+
+  <!-- ═══════════════════════════════════════════════════════════════════ -->
+  <!--  TAB 5: Inventory List (R4.5)                                     -->
+  <!-- ═══════════════════════════════════════════════════════════════════ -->
+  <mat-tab label="Inventory List">
+    <div class="tab-content">
+      @if (loading && !inventorySummary) {
+        <div class="loading-container"><mat-spinner diameter="40"></mat-spinner></div>
+      }
+
+      @if (inventorySummary) {
+        <div class="kpi-row">
+          <mat-card class="kpi-card">
+            <div class="kpi-value">{{ inventorySummary.totalDistinctItems }}</div>
+            <div class="kpi-label">Total Items</div>
+          </mat-card>
+          <mat-card class="kpi-card">
+            <div class="kpi-value">{{ formatCurrency(inventorySummary.grandTotalAmount) }}</div>
+            <div class="kpi-label">Total Amount Spent</div>
+          </mat-card>
+        </div>
+
+        <div class="filter-row">
+          <mat-form-field appearance="outline" class="search-field">
+            <mat-label>Search items</mat-label>
+            <input matInput [(ngModel)]="inventorySearchText" (keyup)="applyInventoryFilter()">
+            <mat-icon matSuffix>search</mat-icon>
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>Category</mat-label>
+            <mat-select [(ngModel)]="selectedCategory" (selectionChange)="filterByCategory()">
+              <mat-option value="">All Categories</mat-option>
+              @for (cat of categories; track cat) {
+                <mat-option [value]="cat">{{ cat }}</mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+        </div>
+
+        <div class="table-responsive">
+          <table mat-table [dataSource]="inventoryDataSource" matSort #inventorySort="matSort" class="full-width">
+            <ng-container matColumnDef="itemName">
+              <th mat-header-cell *matHeaderCellDef mat-sort-header>Item Name</th>
+              <td mat-cell *matCellDef="let row">{{ row.itemName }}</td>
+            </ng-container>
+            <ng-container matColumnDef="category">
+              <th mat-header-cell *matHeaderCellDef mat-sort-header>Category</th>
+              <td mat-cell *matCellDef="let row">
+                <span class="category-badge">{{ row.category }}</span>
+              </td>
+            </ng-container>
+            <ng-container matColumnDef="totalQuantity">
+              <th mat-header-cell *matHeaderCellDef mat-sort-header>Total Qty</th>
+              <td mat-cell *matCellDef="let row">{{ row.totalQuantity }}</td>
+            </ng-container>
+            <ng-container matColumnDef="totalAmount">
+              <th mat-header-cell *matHeaderCellDef mat-sort-header>Total Amount</th>
+              <td mat-cell *matCellDef="let row" class="amount total">{{ formatCurrency(row.totalAmount) }}</td>
+            </ng-container>
+            <ng-container matColumnDef="avgRate">
+              <th mat-header-cell *matHeaderCellDef mat-sort-header>Avg Rate</th>
+              <td mat-cell *matCellDef="let row" class="amount">{{ formatCurrency(row.avgRate) }}</td>
+            </ng-container>
+            <ng-container matColumnDef="lastRate">
+              <th mat-header-cell *matHeaderCellDef mat-sort-header>Last Rate</th>
+              <td mat-cell *matCellDef="let row" class="amount">{{ formatCurrency(row.lastRate) }}</td>
+            </ng-container>
+            <ng-container matColumnDef="sitesUsedCount">
+              <th mat-header-cell *matHeaderCellDef mat-sort-header>Sites</th>
+              <td mat-cell *matCellDef="let row">{{ row.sitesUsedCount }}</td>
+            </ng-container>
+            <ng-container matColumnDef="purchaseCount">
+              <th mat-header-cell *matHeaderCellDef mat-sort-header>Purchases</th>
+              <td mat-cell *matCellDef="let row">{{ row.purchaseCount }}</td>
+            </ng-container>
+            <ng-container matColumnDef="lastPurchaseDate">
+              <th mat-header-cell *matHeaderCellDef mat-sort-header>Last Purchase</th>
+              <td mat-cell *matCellDef="let row">{{ row.lastPurchaseDate }}</td>
+            </ng-container>
+            <tr mat-header-row *matHeaderRowDef="inventoryColumns"></tr>
+            <tr mat-row *matRowDef="let row; columns: inventoryColumns;"></tr>
+          </table>
+        </div>
+        <mat-paginator #inventoryPaginator [pageSizeOptions]="[10, 25, 50, 100]" showFirstLastButtons></mat-paginator>
+      }
+    </div>
+  </mat-tab>
+
+</mat-tab-group>

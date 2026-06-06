@@ -26,6 +26,7 @@ export class LayoutComponent {
     { label: 'GST Inward', icon: 'call_received', route: '/gst-inward' },
     { label: 'GST Reconciliation', icon: 'compare_arrows', route: '/gst-reconciliation' },
     { label: 'Materials', icon: 'inventory_2', route: '/materials' },
+    { label: 'Material Analytics', icon: 'analytics', route: '/material-analytics' },
     { label: 'Invoices', icon: 'description', route: '/invoices' },
     { label: 'Dimensions', icon: 'tune', route: '/dimensions' },
   ];
