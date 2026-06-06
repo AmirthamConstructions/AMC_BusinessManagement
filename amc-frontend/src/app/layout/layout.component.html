@@ -3,6 +3,20 @@
     <mat-icon>menu</mat-icon>
   </button>
   <span class="brand">AMC Business</span>
+
+  <!-- Company Toggle (R7.1) -->
+  <div class="company-toggle">
+    <button mat-button class="toggle-btn"
+      [class.active]="companyFilter.selectedCompany() === 'All'"
+      (click)="companyFilter.setCompany('All')">All</button>
+    <button mat-button class="toggle-btn main"
+      [class.active]="companyFilter.selectedCompany() === 'Main'"
+      (click)="companyFilter.setCompany('Main')">Main</button>
+    <button mat-button class="toggle-btn gst"
+      [class.active]="companyFilter.selectedCompany() === 'GST'"
+      (click)="companyFilter.setCompany('GST')">GST</button>
+  </div>
+
   <span class="spacer"></span>
   @if (auth.currentUser(); as user) {
     <span class="user-role-badge">{{ user.role }}</span>

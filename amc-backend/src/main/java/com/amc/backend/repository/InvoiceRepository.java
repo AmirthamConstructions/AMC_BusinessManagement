@@ -22,4 +22,13 @@ public interface InvoiceRepository extends MongoRepository<Invoice, String> {
     List<Invoice> findByInvoiceDateBetween(LocalDate start, LocalDate end);
 
     long countByStatus(String status);
+
+    // R1.1: Find invoices with number starting with FY prefix to compute MAX
+    List<Invoice> findByInvoiceNoStartingWith(String prefix);
+
+    // R1.4: Template support
+    List<Invoice> findByIsTemplateTrue();
+
+    // R1.5: KPIs — count and sum by status and date range
+    List<Invoice> findByInvoiceDateBetweenAndIsTemplateNot(LocalDate start, LocalDate end, Boolean isTemplate);
 }

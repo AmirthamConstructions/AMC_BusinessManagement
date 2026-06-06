@@ -6,7 +6,32 @@
 <div class="tab-buttons">
   <button mat-flat-button [color]="selectedTab === 'main' ? 'primary' : ''" (click)="onTabChange('main')">Main Company</button>
   <button mat-flat-button [color]="selectedTab === 'gst' ? 'primary' : ''" (click)="onTabChange('gst')">GST Company</button>
+  <button mat-flat-button [color]="selectedTab === 'combined' ? 'accent' : ''" (click)="onTabChange('combined')">Combined</button>
 </div>
+
+<!-- Combined company breakdown (R7.4) -->
+@if (selectedTab === 'combined') {
+  <div class="combined-breakdown">
+    <mat-card class="breakdown-card main">
+      <mat-card-content>
+        <span class="breakdown-label">Main</span>
+        <div class="breakdown-row">
+          <span>Liabilities: <strong class="liability">{{ formatCurrency(combinedTotals.mainLiability) }}</strong></span>
+          <span>Assets: <strong class="asset">{{ formatCurrency(combinedTotals.mainAsset) }}</strong></span>
+        </div>
+      </mat-card-content>
+    </mat-card>
+    <mat-card class="breakdown-card gst">
+      <mat-card-content>
+        <span class="breakdown-label">GST</span>
+        <div class="breakdown-row">
+          <span>Liabilities: <strong class="liability">{{ formatCurrency(combinedTotals.gstLiability) }}</strong></span>
+          <span>Assets: <strong class="asset">{{ formatCurrency(combinedTotals.gstAsset) }}</strong></span>
+        </div>
+      </mat-card-content>
+    </mat-card>
+  </div>
+}
 
 <!-- Summary Cards -->
 <div class="summary-row">

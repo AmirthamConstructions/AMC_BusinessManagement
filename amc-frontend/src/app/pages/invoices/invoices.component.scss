@@ -18,6 +18,143 @@
   &[data-status='SENT'] { background: #fff3e0; color: #e65100; }
   &[data-status='PAID'] { background: #e8f5e9; color: #2e7d32; }
   &[data-status='CANCELLED'] { background: #fce4ec; color: #c62828; }
+
+  &.large {
+    padding: 6px 18px;
+    font-size: 14px;
+  }
+}
+
+// ==================== R1.5: KPI Cards ====================
+.kpi-row {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+
+.kpi-card {
+  flex: 1;
+  min-width: 150px;
+  text-align: center;
+  padding: 16px;
+
+  .kpi-value {
+    font-size: 22px;
+    font-weight: 700;
+    color: #1565c0;
+  }
+
+  .kpi-label {
+    font-size: 12px;
+    color: #757575;
+    margin-top: 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+  }
+
+  .kpi-sub {
+    font-size: 13px;
+    color: #424242;
+    margin-top: 4px;
+    font-weight: 500;
+  }
+
+  &.kpi-billed .kpi-value { color: #1565c0; }
+  &.kpi-collected .kpi-value { color: #2e7d32; }
+  &.kpi-outstanding .kpi-value { color: #e65100; }
+}
+
+.kpi-status-row {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: 20px;
+  padding: 0 4px;
+}
+
+.status-mini {
+  font-size: 13px;
+  font-weight: 600;
+  padding: 4px 12px;
+  border-radius: 12px;
+
+  &[data-status='DRAFT'] { background: #e3f2fd; color: #1565c0; }
+  &[data-status='SENT'] { background: #fff3e0; color: #e65100; }
+  &[data-status='PAID'] { background: #e8f5e9; color: #2e7d32; }
+  &[data-status='CANCELLED'] { background: #fce4ec; color: #c62828; }
+}
+
+// ==================== R1.2: Status Bar ====================
+.status-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 12px 16px;
+  background: #fafafa;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  margin-bottom: 16px;
+}
+
+.status-current {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.status-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.status-label {
+  font-size: 13px;
+  color: #757575;
+}
+
+.status-btn {
+  text-transform: uppercase;
+  font-weight: 600;
+  font-size: 12px;
+
+  mat-icon {
+    font-size: 18px;
+    height: 18px;
+    width: 18px;
+    margin-right: 4px;
+  }
+
+  &.status-btn-sent { color: #e65100; border-color: #e65100; }
+  &.status-btn-paid { color: #2e7d32; border-color: #2e7d32; }
+  &.status-btn-cancelled { color: #c62828; border-color: #c62828; }
+}
+
+// ==================== R1.4: Template Dialog ====================
+.template-select {
+  min-width: 220px;
+}
+
+.dialog-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.4);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.template-dialog {
+  width: 420px;
+  max-width: 90vw;
+  padding: 16px;
 }
 
 // ==================== FORM VIEW ====================

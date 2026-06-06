@@ -1,0 +1,203 @@
+.page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+
+  .header-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+
+    h2 {
+      margin: 0;
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+  }
+
+  .header-icon { color: #3f51b5; }
+
+  .fy-badge {
+    background: #e8eaf6;
+    color: #3f51b5;
+    font-size: 12px;
+    font-weight: 500;
+    padding: 4px 12px;
+    border-radius: 12px;
+  }
+
+  .header-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+
+    .preset-buttons {
+      display: flex;
+      gap: 4px;
+      margin-right: 8px;
+
+      .preset-btn {
+        min-width: auto;
+        padding: 0 12px;
+        height: 36px;
+        font-size: 12px;
+        font-weight: 500;
+        border-radius: 18px;
+        transition: all 0.2s ease;
+
+        &.active {
+          background: #3f51b5;
+          color: #fff;
+          border-color: #3f51b5;
+        }
+      }
+    }
+
+    .date-field { width: 160px; }
+    button { height: 42px; }
+  }
+
+  @media (max-width: 600px) {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
+
+.loading-container { display: flex; justify-content: center; padding: 48px 0; }
+
+// Comparison Table
+.comparison-card {
+  margin-bottom: 24px;
+}
+
+.table-responsive { overflow-x: auto; }
+
+.comparison-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+
+  th, td {
+    padding: 14px 16px;
+    text-align: left;
+    border-bottom: 1px solid #e0e0e0;
+  }
+
+  thead th {
+    font-weight: 600;
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #666;
+    background: #fafafa;
+  }
+
+  .metric-col { width: 30%; }
+  .company-col { width: 23%; text-align: right; }
+  .main-col { color: #1565c0; }
+  .gst-col { color: #e65100; }
+  .combined-col { color: #2e7d32; }
+
+  .metric-cell {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 500;
+
+    .row-icon {
+      font-size: 18px;
+      width: 18px;
+      height: 18px;
+
+      &.revenue-icon { color: #2e7d32; }
+      &.expense-icon { color: #c62828; }
+      &.profit-icon { color: #1565c0; }
+      &.sites-icon { color: #e65100; }
+      &.active-icon { color: #4caf50; }
+    }
+  }
+
+  .value-cell {
+    text-align: right;
+    font-weight: 600;
+    font-size: 15px;
+
+    &.positive { color: #2e7d32; }
+    &.negative { color: #c62828; }
+    &.combined { font-weight: 700; }
+  }
+
+  .profit-row {
+    background: #f5f5f5;
+    td { font-size: 15px; }
+  }
+}
+
+// Company Visual Cards
+.company-cards-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+
+  @media (max-width: 768px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.company-card {
+  border-top: 4px solid #ccc;
+
+  &.main { border-top-color: #1565c0; }
+  &.gst { border-top-color: #e65100; }
+
+  .card-header-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 16px;
+
+    mat-icon { font-size: 24px; width: 24px; height: 24px; color: #666; }
+    h3 { margin: 0; font-weight: 500; font-size: 16px; }
+  }
+
+  .card-stats {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+
+  .stat-item {
+    display: flex;
+    flex-direction: column;
+    padding: 8px 12px;
+    background: #fafafa;
+    border-radius: 8px;
+
+    &.highlight {
+      grid-column: span 2;
+      background: #f5f5f5;
+    }
+
+    .stat-label {
+      font-size: 11px;
+      color: #999;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 4px;
+    }
+
+    .stat-value {
+      font-size: 18px;
+      font-weight: 600;
+
+      &.positive { color: #2e7d32; }
+      &.negative { color: #c62828; }
+    }
+  }
+}

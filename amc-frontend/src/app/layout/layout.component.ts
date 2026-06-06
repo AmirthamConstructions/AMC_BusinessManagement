@@ -4,6 +4,7 @@ import { BreakpointObserver, Breakpoints } from '@angular/cdk/layout';
 import { MatSidenav } from '@angular/material/sidenav';
 import { SharedModule } from '../shared/shared.module';
 import { AuthService } from '../services/auth.service';
+import { CompanyFilterService, CompanyFilter } from '../services/company-filter.service';
 
 @Component({
   selector: 'app-layout',
@@ -29,11 +30,13 @@ export class LayoutComponent {
     { label: 'Material Analytics', icon: 'analytics', route: '/material-analytics' },
     { label: 'Invoices', icon: 'description', route: '/invoices' },
     { label: 'Dimensions', icon: 'tune', route: '/dimensions' },
+    { label: 'Company Reports', icon: 'compare', route: '/company-reports' },
   ];
 
   constructor(
     private breakpointObserver: BreakpointObserver,
-    public auth: AuthService
+    public auth: AuthService,
+    public companyFilter: CompanyFilterService
   ) {
     this.breakpointObserver.observe([Breakpoints.Handset]).subscribe(result => {
       this.isMobile = result.matches;

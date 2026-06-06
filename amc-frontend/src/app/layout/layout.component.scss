@@ -12,6 +12,50 @@
   font-weight: 500;
 }
 
+.company-toggle {
+  display: flex;
+  align-items: center;
+  margin-left: 16px;
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: 20px;
+  padding: 2px;
+
+  .toggle-btn {
+    min-width: 56px;
+    height: 28px;
+    line-height: 28px;
+    font-size: 12px;
+    font-weight: 500;
+    border-radius: 16px;
+    padding: 0 12px;
+    color: rgba(255, 255, 255, 0.7);
+    transition: all 0.2s ease;
+
+    &.active {
+      background: rgba(255, 255, 255, 0.95);
+      color: #3f51b5;
+      font-weight: 600;
+    }
+
+    &.main.active {
+      color: #1565c0;
+    }
+
+    &.gst.active {
+      color: #e65100;
+    }
+  }
+
+  @media (max-width: 599px) {
+    margin-left: 8px;
+    .toggle-btn {
+      min-width: 40px;
+      padding: 0 8px;
+      font-size: 11px;
+    }
+  }
+}
+
 .spacer {
   flex: 1;
 }

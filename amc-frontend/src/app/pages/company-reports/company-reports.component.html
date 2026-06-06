@@ -1,0 +1,148 @@
+<div class="page-header">
+  <div class="header-left">
+    <h2><mat-icon class="header-icon">compare</mat-icon> Company Reports</h2>
+    @if (data) {
+      <span class="fy-badge">{{ getFinancialYear() }}</span>
+    }
+  </div>
+  <div class="header-actions">
+    <div class="preset-buttons">
+      @for (p of datePresets; track p.label) {
+        <button mat-stroked-button class="preset-btn" [class.active]="activePreset === p.label" (click)="applyPreset(p)">{{ p.label }}</button>
+      }
+    </div>
+    <mat-form-field appearance="outline" class="date-field">
+      <mat-label>From</mat-label>
+      <input matInput type="date" [(ngModel)]="filterStartDate">
+    </mat-form-field>
+    <mat-form-field appearance="outline" class="date-field">
+      <mat-label>To</mat-label>
+      <input matInput type="date" [(ngModel)]="filterEndDate">
+    </mat-form-field>
+    <button mat-raised-button color="primary" (click)="applyDateFilter()">
+      <mat-icon>filter_alt</mat-icon> Apply
+    </button>
+    <button mat-stroked-button (click)="clearDateFilter()">
+      <mat-icon>refresh</mat-icon> Reset
+    </button>
+  </div>
+</div>
+
+@if (loading) {
+  <div class="loading-container"><mat-spinner diameter="40"></mat-spinner></div>
+}
+
+@if (data && !loading) {
+
+<!-- Comparison Table -->
+<mat-card class="comparison-card">
+  <mat-card-header>
+    <mat-card-title>Company-wise Comparison</mat-card-title>
+    <mat-card-subtitle>Side-by-side financial summary for the current financial year</mat-card-subtitle>
+  </mat-card-header>
+  <mat-card-content>
+    <div class="table-responsive">
+      <table class="comparison-table">
+        <thead>
+          <tr>
+            <th class="metric-col">Metric</th>
+            <th class="company-col main-col">Main</th>
+            <th class="company-col gst-col">GST</th>
+            <th class="company-col combined-col">Combined</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="metric-cell"><mat-icon class="row-icon revenue-icon">arrow_circle_down</mat-icon> Total Revenue</td>
+            <td class="value-cell positive">{{ formatCurrency(data.mainRevenue) }}</td>
+            <td class="value-cell positive">{{ formatCurrency(data.gstRevenue) }}</td>
+            <td class="value-cell positive combined">{{ formatCurrency(data.combinedRevenue) }}</td>
+          </tr>
+          <tr>
+            <td class="metric-cell"><mat-icon class="row-icon expense-icon">arrow_circle_up</mat-icon> Total Expense</td>
+            <td class="value-cell negative">{{ formatCurrency(data.mainExpense) }}</td>
+            <td class="value-cell negative">{{ formatCurrency(data.gstExpense) }}</td>
+            <td class="value-cell negative combined">{{ formatCurrency(data.combinedExpense) }}</td>
+          </tr>
+          <tr class="profit-row">
+            <td class="metric-cell"><mat-icon class="row-icon profit-icon">trending_up</mat-icon> Net Profit</td>
+            <td class="value-cell" [class.positive]="data.mainProfit >= 0" [class.negative]="data.mainProfit < 0">{{ formatCurrency(data.mainProfit) }}</td>
+            <td class="value-cell" [class.positive]="data.gstProfit >= 0" [class.negative]="data.gstProfit < 0">{{ formatCurrency(data.gstProfit) }}</td>
+            <td class="value-cell combined" [class.positive]="data.combinedProfit >= 0" [class.negative]="data.combinedProfit < 0">{{ formatCurrency(data.combinedProfit) }}</td>
+          </tr>
+          <tr>
+            <td class="metric-cell"><mat-icon class="row-icon sites-icon">location_city</mat-icon> Total Sites</td>
+            <td class="value-cell">{{ data.mainSites }}</td>
+            <td class="value-cell">{{ data.gstSites }}</td>
+            <td class="value-cell combined">{{ data.combinedSites }}</td>
+          </tr>
+          <tr>
+            <td class="metric-cell"><mat-icon class="row-icon active-icon">check_circle</mat-icon> Active Sites</td>
+            <td class="value-cell">{{ data.mainActiveSites }}</td>
+            <td class="value-cell">{{ data.gstActiveSites }}</td>
+            <td class="value-cell combined">{{ data.combinedActiveSites }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </mat-card-content>
+</mat-card>
+
+<!-- Visual Cards -->
+<div class="company-cards-row">
+  <mat-card class="company-card main">
+    <mat-card-content>
+      <div class="card-header-row">
+        <mat-icon>business</mat-icon>
+        <h3>Main Company</h3>
+      </div>
+      <div class="card-stats">
+        <div class="stat-item">
+          <span class="stat-label">Revenue</span>
+          <span class="stat-value positive">{{ formatCurrency(data.mainRevenue) }}</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-label">Expense</span>
+          <span class="stat-value negative">{{ formatCurrency(data.mainExpense) }}</span>
+        </div>
+        <div class="stat-item highlight">
+          <span class="stat-label">Net Profit</span>
+          <span class="stat-value" [class.positive]="data.mainProfit >= 0" [class.negative]="data.mainProfit < 0">{{ formatCurrency(data.mainProfit) }}</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-label">Sites</span>
+          <span class="stat-value">{{ data.mainActiveSites }} / {{ data.mainSites }}</span>
+        </div>
+      </div>
+    </mat-card-content>
+  </mat-card>
+
+  <mat-card class="company-card gst">
+    <mat-card-content>
+      <div class="card-header-row">
+        <mat-icon>account_balance</mat-icon>
+        <h3>GST Company</h3>
+      </div>
+      <div class="card-stats">
+        <div class="stat-item">
+          <span class="stat-label">Revenue</span>
+          <span class="stat-value positive">{{ formatCurrency(data.gstRevenue) }}</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-label">Expense</span>
+          <span class="stat-value negative">{{ formatCurrency(data.gstExpense) }}</span>
+        </div>
+        <div class="stat-item highlight">
+          <span class="stat-label">Net Profit</span>
+          <span class="stat-value" [class.positive]="data.gstProfit >= 0" [class.negative]="data.gstProfit < 0">{{ formatCurrency(data.gstProfit) }}</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-label">Sites</span>
+          <span class="stat-value">{{ data.gstActiveSites }} / {{ data.gstSites }}</span>
+        </div>
+      </div>
+    </mat-card-content>
+  </mat-card>
+</div>
+
+} <!-- end @if data -->

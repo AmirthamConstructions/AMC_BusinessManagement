@@ -4,7 +4,7 @@ import { SharedModule } from '../../shared/shared.module';
 import { InvoiceService } from '../../services/invoice.service';
 import { SiteService } from '../../services/site.service';
 import { GstOutwardService } from '../../services/gst-outward.service';
-import { Invoice, InvoiceLineItem, COMPANY_INFO } from '../../models/invoice.model';
+import { Invoice, InvoiceLineItem, InvoiceKpi, COMPANY_INFO } from '../../models/invoice.model';
 import { Site } from '../../models/site.model';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatTableDataSource } from '@angular/material/table';
@@ -45,6 +45,16 @@ export class InvoicesComponent implements OnInit {
   @ViewChild('invoicePrint') invoicePrintRef!: ElementRef;
   generatingPdf = false;
 
+  // R1.4 — Templates
+  templates: Invoice[] = [];
+  showTemplateDialog = false;
+  templateName = '';
+  templateSaveId = '';
+
+  // R1.5 — KPIs
+  kpis: InvoiceKpi | null = null;
+  kpiLoading = false;
+
   constructor(
     private fb: FormBuilder,
     private invoiceService: InvoiceService,
@@ -56,6 +66,8 @@ export class InvoicesComponent implements OnInit {
   ngOnInit(): void {
     this.loadList();
     this.loadCustomers();
+    this.loadTemplates();
+    this.loadKpis();
     this.initForm();
   }
 
@@ -63,20 +75,26 @@ export class InvoicesComponent implements OnInit {
     this.dataSource.paginator = this.paginator;
   }
 
-  // ============== LIST ==============
+  // ═══════════════════════════════════════════════════════════════════════════
+  //  LIST
+  // ═══════════════════════════════════════════════════════════════════════════
 
   loadList(): void {
     this.listLoading = true;
     this.invoiceService.getAll(0, 200).subscribe({
-      next: res => { this.dataSource.data = res.data; this.listLoading = false; },
+      next: res => {
+        this.dataSource.data = res.data.filter(inv => !inv.isTemplate);
+        this.listLoading = false;
+      },
       error: () => { this.snackBar.open('Failed to load invoices', 'OK', { duration: 3000 }); this.listLoading = false; }
     });
   }
 
-  // ============== CUSTOMERS ==============
+  // ═══════════════════════════════════════════════════════════════════════════
+  //  CUSTOMERS
+  // ═══════════════════════════════════════════════════════════════════════════
 
   loadCustomers(): void {
-    // Load unique customers from GST Outward data
     this.gstOutwardService.getAll(0, 500).subscribe({
       next: res => {
         const map = new Map<string, any>();
@@ -96,7 +114,67 @@ export class InvoicesComponent implements OnInit {
     });
   }
 
-  // ============== FORM ==============
+  // ═══════════════════════════════════════════════════════════════════════════
+  //  R1.4 — TEMPLATES
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  loadTemplates(): void {
+    this.invoiceService.getTemplates().subscribe({
+      next: tpls => this.templates = tpls,
+      error: () => {} // silent fail
+    });
+  }
+
+  openSaveAsTemplate(invoiceId: string): void {
+    this.templateSaveId = invoiceId;
+    this.templateName = '';
+    this.showTemplateDialog = true;
+  }
+
+  confirmSaveAsTemplate(): void {
+    if (!this.templateName.trim()) {
+      this.snackBar.open('Template name is required', 'OK', { duration: 3000 });
+      return;
+    }
+    this.invoiceService.saveAsTemplate(this.templateSaveId, this.templateName).subscribe({
+      next: () => {
+        this.showTemplateDialog = false;
+        this.loadTemplates();
+        this.loadList();
+        this.snackBar.open('Saved as template', 'OK', { duration: 2000 });
+      },
+      error: () => this.snackBar.open('Failed to save template', 'OK', { duration: 3000 })
+    });
+  }
+
+  createFromTemplate(templateId: string): void {
+    this.invoiceService.createFromTemplate(templateId).subscribe({
+      next: (invoice) => {
+        this.snackBar.open('Invoice created from template', 'OK', { duration: 2000 });
+        this.previewInvoice = invoice;
+        this.view = 'preview';
+        this.loadList();
+        this.loadKpis();
+      },
+      error: () => this.snackBar.open('Failed to create from template', 'OK', { duration: 3000 })
+    });
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  //  R1.5 — KPIs
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  loadKpis(): void {
+    this.kpiLoading = true;
+    this.invoiceService.getKpis().subscribe({
+      next: data => { this.kpis = data; this.kpiLoading = false; },
+      error: () => { this.kpiLoading = false; }
+    });
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  //  FORM
+  // ═══════════════════════════════════════════════════════════════════════════
 
   initForm(): void {
     this.invoiceForm = this.fb.group({
@@ -262,6 +340,7 @@ export class InvoicesComponent implements OnInit {
         this.previewInvoice = saved;
         this.view = 'preview';
         this.loadList();
+        this.loadKpis();
       },
       error: () => {
         this.saving = false;
@@ -270,7 +349,9 @@ export class InvoicesComponent implements OnInit {
     });
   }
 
-  // ============== PREVIEW / PDF ==============
+  // ═══════════════════════════════════════════════════════════════════════════
+  //  PREVIEW / PDF
+  // ═══════════════════════════════════════════════════════════════════════════
 
   openPreview(invoice: Invoice): void {
     this.previewInvoice = invoice;
@@ -295,12 +376,68 @@ export class InvoicesComponent implements OnInit {
     this.generatingPdf = false;
   }
 
-  // ============== DELETE ==============
+  // ═══════════════════════════════════════════════════════════════════════════
+  //  R1.2 — Status Workflow
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  changeStatus(newStatus: string): void {
+    if (!this.previewInvoice) return;
+    this.invoiceService.updateStatus(this.previewInvoice.id, newStatus).subscribe({
+      next: (updated) => {
+        this.previewInvoice = updated;
+        this.loadList();
+        this.loadKpis();
+        this.snackBar.open(`Status updated to ${newStatus}`, 'OK', { duration: 2000 });
+      },
+      error: (err) => {
+        const msg = err.error?.error?.message || 'Failed to update status';
+        this.snackBar.open(msg, 'OK', { duration: 3000 });
+      }
+    });
+  }
+
+  getNextStatuses(currentStatus: string): string[] {
+    switch (currentStatus) {
+      case 'DRAFT': return ['SENT', 'CANCELLED'];
+      case 'SENT': return ['PAID', 'CANCELLED'];
+      default: return [];
+    }
+  }
+
+  duplicateInvoice(id: string): void {
+    this.invoiceService.duplicate(id).subscribe({
+      next: (copy) => {
+        this.snackBar.open('Invoice duplicated', 'OK', { duration: 2000 });
+        this.previewInvoice = copy;
+        this.view = 'preview';
+        this.loadList();
+        this.loadKpis();
+      },
+      error: () => this.snackBar.open('Failed to duplicate invoice', 'OK', { duration: 3000 })
+    });
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  //  R1.3 — Copy Shareable Link
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  copyShareableLink(): void {
+    const link = `${window.location.origin}/invoices?preview=${this.previewInvoice.id}`;
+    navigator.clipboard.writeText(link).then(() => {
+      this.snackBar.open('Link copied to clipboard!', 'OK', { duration: 2000 });
+    }).catch(() => {
+      this.snackBar.open('Failed to copy link', 'OK', { duration: 3000 });
+    });
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  //  DELETE
+  // ═══════════════════════════════════════════════════════════════════════════
 
   deleteInvoice(id: string): void {
     if (confirm('Delete this invoice?')) {
       this.invoiceService.delete(id).subscribe({
-        next: () => { this.loadList(); this.snackBar.open('Invoice deleted', 'OK', { duration: 2000 }); },
+        next: () => { this.loadList(); this.loadKpis(); this.snackBar.open('Invoice deleted', 'OK', { duration: 2000 }); },
         error: () => this.snackBar.open('Failed to delete invoice', 'OK', { duration: 3000 })
       });
     }
@@ -308,7 +445,9 @@ export class InvoicesComponent implements OnInit {
 
   goToList(): void { this.view = 'list'; }
 
-  // ============== UTILS ==============
+  // ═══════════════════════════════════════════════════════════════════════════
+  //  UTILS
+  // ═══════════════════════════════════════════════════════════════════════════
 
   getStatusColor(status: string): string {
     switch (status) {

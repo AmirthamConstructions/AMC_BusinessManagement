@@ -21,12 +21,30 @@ export interface Invoice {
   amountInWords: string;
   status: 'DRAFT' | 'SENT' | 'PAID' | 'CANCELLED';
   notes: string;
+  // R1.4: Template support
+  isTemplate?: boolean;
+  templateName?: string;
 }
 
 export interface InvoiceLineItem {
   sNo: number;
   description: string;
   amount: number;
+}
+
+/** R1.5: Invoice KPIs */
+export interface InvoiceKpi {
+  invoicesThisMonth: number;
+  billedThisMonth: number;
+  invoicesThisFY: number;
+  billedThisFY: number;
+  totalDraft: number;
+  totalSent: number;
+  totalPaid: number;
+  totalCancelled: number;
+  totalBilled: number;
+  totalCollected: number;
+  totalOutstanding: number;
 }
 
 // Company info constants (from invoice_requirements.txt)

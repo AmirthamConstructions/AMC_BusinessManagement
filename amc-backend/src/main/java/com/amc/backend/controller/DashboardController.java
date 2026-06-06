@@ -35,4 +35,23 @@ public class DashboardController {
         DashboardService.DashboardData data = dashboardService.getDashboardData(startDate, endDate);
         return ResponseEntity.ok(ApiResponse.ok(data));
     }
+
+    @GetMapping("/company-comparison")
+    public ResponseEntity<ApiResponse<DashboardService.CompanyComparison>> getCompanyComparison(
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate) {
+
+        if (startDate == null) {
+            LocalDate now = LocalDate.now();
+            startDate = now.getMonthValue() >= 4
+                    ? LocalDate.of(now.getYear(), 4, 1)
+                    : LocalDate.of(now.getYear() - 1, 4, 1);
+        }
+        if (endDate == null) {
+            endDate = LocalDate.now();
+        }
+
+        DashboardService.CompanyComparison comparison = dashboardService.getCompanyComparison(startDate, endDate);
+        return ResponseEntity.ok(ApiResponse.ok(comparison));
+    }
 }

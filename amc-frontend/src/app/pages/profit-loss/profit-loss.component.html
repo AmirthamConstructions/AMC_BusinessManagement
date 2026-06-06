@@ -6,7 +6,34 @@
 <div class="tab-buttons">
   <button mat-flat-button [color]="selectedTab === 'main' ? 'primary' : ''" (click)="onTabChange('main')">Main Company</button>
   <button mat-flat-button [color]="selectedTab === 'gst' ? 'primary' : ''" (click)="onTabChange('gst')">GST Company</button>
+  <button mat-flat-button [color]="selectedTab === 'combined' ? 'accent' : ''" (click)="onTabChange('combined')">Combined</button>
 </div>
+
+<!-- Combined company breakdown (R7.4) -->
+@if (selectedTab === 'combined') {
+  <div class="combined-breakdown">
+    <mat-card class="breakdown-card main">
+      <mat-card-content>
+        <span class="breakdown-label">Main</span>
+        <div class="breakdown-row">
+          <span>Income: <strong class="income">{{ formatCurrency(combinedTotals.mainIncome) }}</strong></span>
+          <span>Expense: <strong class="expense">{{ formatCurrency(combinedTotals.mainExpense) }}</strong></span>
+          <span>Net: <strong [class.income]="combinedTotals.mainNet >= 0" [class.expense]="combinedTotals.mainNet < 0">{{ formatCurrency(combinedTotals.mainNet) }}</strong></span>
+        </div>
+      </mat-card-content>
+    </mat-card>
+    <mat-card class="breakdown-card gst">
+      <mat-card-content>
+        <span class="breakdown-label">GST</span>
+        <div class="breakdown-row">
+          <span>Income: <strong class="income">{{ formatCurrency(combinedTotals.gstIncome) }}</strong></span>
+          <span>Expense: <strong class="expense">{{ formatCurrency(combinedTotals.gstExpense) }}</strong></span>
+          <span>Net: <strong [class.income]="combinedTotals.gstNet >= 0" [class.expense]="combinedTotals.gstNet < 0">{{ formatCurrency(combinedTotals.gstNet) }}</strong></span>
+        </div>
+      </mat-card-content>
+    </mat-card>
+  </div>
+}
 
 <div class="summary-row">
   <mat-card class="summary-card">

@@ -20,8 +20,6 @@ public interface InventoryRepository extends MongoRepository<InventoryItem, Stri
 
     List<InventoryItem> findByStorageLocation(String storageLocation);
 
-    List<InventoryItem> findByCurrentStockLessThanMinimumStock();
-
     List<InventoryItem> findByIsActive(Boolean isActive);
 
     List<InventoryItem> findByCategoryAndIsActive(String category, Boolean isActive);

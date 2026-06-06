@@ -200,6 +200,56 @@ public class DashboardService {
                 .build();
     }
 
+    // ── Company Comparison (R7.5) ────────────────────────────────────────────
+
+    public CompanyComparison getCompanyComparison(LocalDate startDate, LocalDate endDate) {
+        List<Transaction> transactions = transactionRepository.findByDateBetween(startDate, endDate);
+        List<Site> allSites = siteRepository.findAll();
+
+        // Main company
+        double mainRevenue = sumByTypeAndCompany(transactions, "Credit", "Main");
+        double mainExpense = sumByTypeAndCompany(transactions, "Debit", "Main");
+        long mainSites = allSites.stream().filter(s -> "Main".equalsIgnoreCase(s.getCompany())).count();
+        long mainActive = allSites.stream().filter(s -> "Main".equalsIgnoreCase(s.getCompany()) && Boolean.TRUE.equals(s.getIsActive())).count();
+
+        // GST company
+        double gstRevenue = sumByTypeAndCompany(transactions, "Credit", "GST");
+        double gstExpense = sumByTypeAndCompany(transactions, "Debit", "GST");
+        long gstSites = allSites.stream().filter(s -> "GST".equalsIgnoreCase(s.getCompany())).count();
+        long gstActive = allSites.stream().filter(s -> "GST".equalsIgnoreCase(s.getCompany()) && Boolean.TRUE.equals(s.getIsActive())).count();
+
+        return CompanyComparison.builder()
+                .mainRevenue(round2(mainRevenue))
+                .mainExpense(round2(mainExpense))
+                .mainProfit(round2(mainRevenue - mainExpense))
+                .mainSites((int) mainSites)
+                .mainActiveSites((int) mainActive)
+                .gstRevenue(round2(gstRevenue))
+                .gstExpense(round2(gstExpense))
+                .gstProfit(round2(gstRevenue - gstExpense))
+                .gstSites((int) gstSites)
+                .gstActiveSites((int) gstActive)
+                .combinedRevenue(round2(mainRevenue + gstRevenue))
+                .combinedExpense(round2(mainExpense + gstExpense))
+                .combinedProfit(round2((mainRevenue + gstRevenue) - (mainExpense + gstExpense)))
+                .combinedSites((int) (mainSites + gstSites))
+                .combinedActiveSites((int) (mainActive + gstActive))
+                .startDate(startDate.toString())
+                .endDate(endDate.toString())
+                .build();
+    }
+
+    private double sumByTypeAndCompany(List<Transaction> transactions, String type, String company) {
+        return transactions.stream()
+                .filter(t -> type.equalsIgnoreCase(t.getType()) && company.equalsIgnoreCase(t.getCompany()))
+                .mapToDouble(t -> t.getAmount() != null ? t.getAmount() : 0)
+                .sum();
+    }
+
+    private double round2(double val) {
+        return Math.round(val * 100.0) / 100.0;
+    }
+
     // ── DTOs ───────────────────────────────────────────────────────────────────
 
     @Data @Builder @NoArgsConstructor @AllArgsConstructor
@@ -254,5 +304,26 @@ public class DashboardService {
         private String siteName;
         private double amount;
         private String party;
+    }
+
+    @Data @Builder @NoArgsConstructor @AllArgsConstructor
+    public static class CompanyComparison {
+        private double mainRevenue;
+        private double mainExpense;
+        private double mainProfit;
+        private int mainSites;
+        private int mainActiveSites;
+        private double gstRevenue;
+        private double gstExpense;
+        private double gstProfit;
+        private int gstSites;
+        private int gstActiveSites;
+        private double combinedRevenue;
+        private double combinedExpense;
+        private double combinedProfit;
+        private int combinedSites;
+        private int combinedActiveSites;
+        private String startDate;
+        private String endDate;
     }
 }

@@ -57,6 +57,11 @@ public class Invoice {
     // Status
     private String status; // DRAFT, SENT, PAID, CANCELLED
 
+    // R1.4: Template support
+    @Builder.Default
+    private Boolean isTemplate = false;
+    private String templateName;
+
     private String notes;
 
     private LocalDateTime createdAt;

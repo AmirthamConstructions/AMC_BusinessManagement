@@ -30,6 +30,7 @@ export const routes: Routes = [
       { path: 'material-analytics', loadComponent: () => import('./pages/material-analytics/material-analytics.component').then(m => m.MaterialAnalyticsComponent) },
       { path: 'invoices', loadComponent: () => import('./pages/invoices/invoices.component').then(m => m.InvoicesComponent) },
       { path: 'dimensions', loadComponent: () => import('./pages/dimensions/dimensions.component').then(m => m.DimensionsComponent) },
+      { path: 'company-reports', loadComponent: () => import('./pages/company-reports/company-reports.component').then(m => m.CompanyReportsComponent) },
     ]
   },
   { path: '**', redirectTo: 'login' }

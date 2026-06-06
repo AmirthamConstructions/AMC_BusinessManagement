@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable, map } from 'rxjs';
 import { environment } from '../../environments/environment';
-import { Invoice } from '../models/invoice.model';
+import { Invoice, InvoiceKpi } from '../models/invoice.model';
 import { ApiResponse, PaginationMeta } from '../models/api-response.model';
 
 @Injectable({ providedIn: 'root' })
@@ -48,5 +48,47 @@ export class InvoiceService {
 
   delete(id: string): Observable<void> {
     return this.http.delete<void>(`${this.url}/${id}`);
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  //  R1.2 — Status Workflow
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  updateStatus(id: string, status: string): Observable<Invoice> {
+    return this.http.patch<ApiResponse<Invoice>>(`${this.url}/${id}/status`, { status })
+      .pipe(map(res => res.data));
+  }
+
+  duplicate(id: string): Observable<Invoice> {
+    return this.http.post<ApiResponse<Invoice>>(`${this.url}/${id}/duplicate`, {})
+      .pipe(map(res => res.data));
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  //  R1.4 — Templates
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  getTemplates(): Observable<Invoice[]> {
+    return this.http.get<ApiResponse<Invoice[]>>(`${this.url}/templates`)
+      .pipe(map(res => res.data));
+  }
+
+  saveAsTemplate(id: string, templateName: string): Observable<Invoice> {
+    return this.http.post<ApiResponse<Invoice>>(`${this.url}/${id}/save-as-template`, { templateName })
+      .pipe(map(res => res.data));
+  }
+
+  createFromTemplate(templateId: string): Observable<Invoice> {
+    return this.http.post<ApiResponse<Invoice>>(`${this.url}/create-from-template/${templateId}`, {})
+      .pipe(map(res => res.data));
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  //  R1.5 — KPIs
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  getKpis(): Observable<InvoiceKpi> {
+    return this.http.get<ApiResponse<InvoiceKpi>>(`${this.url}/kpis`)
+      .pipe(map(res => res.data));
   }
 }

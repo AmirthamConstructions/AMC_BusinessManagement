@@ -1,7 +1,8 @@
-import { Component, OnInit, ViewChild } from '@angular/core';
+import { Component, OnInit, ViewChild, effect } from '@angular/core';
 import { SharedModule } from '../../shared/shared.module';
 import { TransactionService } from '../../services/transaction.service';
 import { Transaction } from '../../models/transaction.model';
+import { CompanyFilterService, CompanyFilter } from '../../services/company-filter.service';
 import { MatTableDataSource } from '@angular/material/table';
 import { MatPaginator } from '@angular/material/paginator';
 import { MatSort } from '@angular/material/sort';
@@ -15,15 +16,33 @@ import { MatSnackBar } from '@angular/material/snack-bar';
   styleUrl: './transactions.component.scss'
 })
 export class TransactionsComponent implements OnInit {
-  displayedColumns = ['date', 'transactionId', 'siteName', 'type', 'nature', 'amount', 'party', 'modeOfPayment', 'actions'];
+  displayedColumns = ['date', 'transactionId', 'company', 'siteName', 'type', 'nature', 'amount', 'party', 'modeOfPayment', 'actions'];
   dataSource = new MatTableDataSource<Transaction>();
+  allTransactions: Transaction[] = [];
   searchText = '';
   loading = false;
+
+  // Company split summary
+  summary = {
+    mainCredits: 0, mainDebits: 0, mainNet: 0,
+    gstCredits: 0, gstDebits: 0, gstNet: 0,
+    totalCredits: 0, totalDebits: 0, totalNet: 0
+  };
 
   @ViewChild(MatPaginator) paginator!: MatPaginator;
   @ViewChild(MatSort) sort!: MatSort;
 
-  constructor(private txnService: TransactionService, private snackBar: MatSnackBar) {}
+  constructor(
+    private txnService: TransactionService,
+    private snackBar: MatSnackBar,
+    public companyFilter: CompanyFilterService
+  ) {
+    // React to global company filter changes
+    effect(() => {
+      const company = this.companyFilter.selectedCompany();
+      this.filterByCompany(company);
+    });
+  }
 
   ngOnInit(): void {
     this.loadData();
@@ -38,7 +57,8 @@ export class TransactionsComponent implements OnInit {
     this.loading = true;
     this.txnService.getAll(0, 500).subscribe({
       next: (res) => {
-        this.dataSource.data = res.data;
+        this.allTransactions = res.data;
+        this.filterByCompany(this.companyFilter.selectedCompany());
         this.loading = false;
       },
       error: () => {
@@ -46,6 +66,38 @@ export class TransactionsComponent implements OnInit {
         this.loading = false;
       }
     });
+  }
+
+  filterByCompany(company: CompanyFilter): void {
+    let filtered = this.allTransactions;
+    if (company !== 'All') {
+      filtered = this.allTransactions.filter(t => t.company === company);
+    }
+    this.dataSource.data = filtered;
+    this.computeSummary();
+
+    // Re-apply text search filter
+    if (this.searchText) {
+      this.dataSource.filter = this.searchText.trim().toLowerCase();
+    }
+  }
+
+  computeSummary(): void {
+    const all = this.allTransactions;
+    const mainTxns = all.filter(t => t.company === 'Main');
+    const gstTxns = all.filter(t => t.company === 'GST');
+
+    this.summary.mainCredits = mainTxns.filter(t => t.type === 'Credit').reduce((s, t) => s + (t.amount || 0), 0);
+    this.summary.mainDebits = mainTxns.filter(t => t.type === 'Debit').reduce((s, t) => s + (t.amount || 0), 0);
+    this.summary.mainNet = this.summary.mainCredits - this.summary.mainDebits;
+
+    this.summary.gstCredits = gstTxns.filter(t => t.type === 'Credit').reduce((s, t) => s + (t.amount || 0), 0);
+    this.summary.gstDebits = gstTxns.filter(t => t.type === 'Debit').reduce((s, t) => s + (t.amount || 0), 0);
+    this.summary.gstNet = this.summary.gstCredits - this.summary.gstDebits;
+
+    this.summary.totalCredits = this.summary.mainCredits + this.summary.gstCredits;
+    this.summary.totalDebits = this.summary.mainDebits + this.summary.gstDebits;
+    this.summary.totalNet = this.summary.totalCredits - this.summary.totalDebits;
   }
 
   applyFilter(): void {
@@ -64,8 +116,15 @@ export class TransactionsComponent implements OnInit {
     }
   }
 
-  // Color chip based on type
   getTypeClass(type: string): string {
     return type === 'Credit' ? 'chip-credit' : 'chip-debit';
+  }
+
+  getCompanyClass(company: string): string {
+    return company === 'Main' ? 'chip-main' : 'chip-gst';
+  }
+
+  formatCurrency(val: number): string {
+    return '₹' + (val || 0).toLocaleString('en-IN', { maximumFractionDigits: 0 });
   }
 }

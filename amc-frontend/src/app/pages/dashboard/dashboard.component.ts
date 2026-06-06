@@ -1,8 +1,9 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, effect } from '@angular/core';
 import { Router } from '@angular/router';
 import { SharedModule } from '../../shared/shared.module';
 import { DashboardService } from '../../services/dashboard.service';
 import { DashboardData } from '../../models/dashboard.model';
+import { CompanyFilterService } from '../../services/company-filter.service';
 import { Chart, ChartConfiguration, registerables } from 'chart.js';
 
 Chart.register(...registerables);
@@ -16,6 +17,7 @@ Chart.register(...registerables);
 })
 export class DashboardComponent implements OnInit {
   data: DashboardData | null = null;
+  fullData: DashboardData | null = null;  // Unfiltered data for company filter
   loading = false;
   error = '';
 
@@ -82,7 +84,19 @@ export class DashboardComponent implements OnInit {
     }
   };
 
-  constructor(private dashboardService: DashboardService, private router: Router) {}
+  constructor(
+    private dashboardService: DashboardService,
+    private router: Router,
+    public companyFilter: CompanyFilterService
+  ) {
+    // Reload dashboard when company filter changes
+    effect(() => {
+      this.companyFilter.selectedCompany(); // subscribe to changes
+      if (this.data) {
+        this.applyCompanyFilter();
+      }
+    });
+  }
 
   ngOnInit(): void {
     this.loadData();
@@ -93,8 +107,8 @@ export class DashboardComponent implements OnInit {
     this.error = '';
     this.dashboardService.getData(this.filterStartDate || undefined, this.filterEndDate || undefined).subscribe({
       next: (data) => {
-        this.data = data;
-        this.buildCharts(data);
+        this.fullData = data;
+        this.applyCompanyFilter();
         this.loading = false;
       },
       error: () => {
@@ -104,13 +118,67 @@ export class DashboardComponent implements OnInit {
     });
   }
 
+  /** R7.2: Re-compute displayed KPIs based on company filter */
+  applyCompanyFilter(): void {
+    if (!this.fullData) return;
+    const company = this.companyFilter.selectedCompany();
+    const fd = this.fullData;
+
+    if (company === 'All') {
+      this.data = fd;
+    } else {
+      const isMain = company === 'Main';
+      const rev = isMain ? fd.kpis.mainRevenue : fd.kpis.gstRevenue;
+      const exp = isMain ? fd.kpis.mainExpenditure : fd.kpis.gstExpenditure;
+
+      this.data = {
+        ...fd,
+        kpis: {
+          ...fd.kpis,
+          revenue: rev,
+          expenditure: exp,
+          netProfit: rev - exp
+        }
+      };
+    }
+
+    this.buildCharts(this.data);
+  }
+
+  // Date presets
+  datePresets = [
+    { label: 'Last 3M', months: 3 },
+    { label: 'Last 6M', months: 6 },
+    { label: 'Last 12M', months: 12 },
+    { label: 'This FY', months: 0 },
+  ];
+  activePreset = '';
+
   applyDateFilter(): void {
+    this.activePreset = '';
+    this.loadData();
+  }
+
+  applyPreset(preset: { label: string; months: number }): void {
+    this.activePreset = preset.label;
+    const today = new Date();
+    if (preset.months === 0) {
+      // This Financial Year: Apr 1 → today
+      const fy = today.getMonth() >= 3 ? today.getFullYear() : today.getFullYear() - 1;
+      this.filterStartDate = `${fy}-04-01`;
+    } else {
+      const start = new Date(today);
+      start.setMonth(start.getMonth() - preset.months);
+      this.filterStartDate = start.toISOString().slice(0, 10);
+    }
+    this.filterEndDate = today.toISOString().slice(0, 10);
     this.loadData();
   }
 
   clearDateFilter(): void {
     this.filterStartDate = '';
     this.filterEndDate = '';
+    this.activePreset = '';
     this.loadData();
   }
 

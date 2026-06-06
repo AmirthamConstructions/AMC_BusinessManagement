@@ -11,4 +11,65 @@
   padding: 3px 10px; border-radius: 12px; font-size: 12px; font-weight: 500;
   &.chip-credit { background: #e8f5e9; color: #2e7d32; }
   &.chip-debit { background: #ffebee; color: #c62828; }
+  &.chip-main { background: #e3f2fd; color: #1565c0; }
+  &.chip-gst { background: #fff3e0; color: #e65100; }
+}
+.loading-container { display: flex; justify-content: center; padding: 48px 0; }
+
+// Company Split Summary Cards (R7.3)
+.split-summary-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  margin-bottom: 20px;
+
+  @media (max-width: 768px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.split-card {
+  border-top: 3px solid #ccc;
+
+  &.main-card { border-top-color: #1565c0; }
+  &.gst-card { border-top-color: #e65100; }
+  &.total-card { border-top-color: #2e7d32; }
+
+  .split-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 12px;
+
+    mat-icon { font-size: 20px; width: 20px; height: 20px; color: #666; }
+    .split-title { font-weight: 500; font-size: 14px; color: #333; }
+  }
+
+  .split-stats {
+    display: flex;
+    gap: 16px;
+
+    .stat {
+      display: flex;
+      flex-direction: column;
+      flex: 1;
+
+      .stat-label {
+        font-size: 11px;
+        color: #999;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 2px;
+      }
+
+      .stat-value {
+        font-size: 14px;
+        font-weight: 600;
+        white-space: nowrap;
+
+        &.credit { color: #2e7d32; }
+        &.debit { color: #c62828; }
+      }
+    }
+  }
 }

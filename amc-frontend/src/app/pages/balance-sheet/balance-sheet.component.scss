@@ -7,3 +7,40 @@
 .table-responsive { overflow-x: auto; }
 .full-width { width: 100%; }
 .amount { font-weight: 600; white-space: nowrap; }
+.loading-container { display: flex; justify-content: center; padding: 48px 0; }
+
+// Combined breakdown cards (R7.4)
+.combined-breakdown {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 16px;
+
+  @media (max-width: 600px) { grid-template-columns: 1fr; }
+}
+
+.breakdown-card {
+  border-left: 3px solid #ccc;
+
+  &.main { border-left-color: #1565c0; }
+  &.gst { border-left-color: #e65100; }
+
+  .breakdown-label {
+    font-weight: 600;
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 6px;
+    display: block;
+  }
+
+  .breakdown-row {
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+    font-size: 13px;
+
+    .liability { color: #c62828; }
+    .asset { color: #2e7d32; }
+  }
+}

@@ -1,6 +1,7 @@
 package com.amc.backend.controller;
 
 import com.amc.backend.dto.ApiResponse;
+import com.amc.backend.dto.InvoiceKpi;
 import com.amc.backend.model.Invoice;
 import com.amc.backend.service.InvoiceService;
 import lombok.RequiredArgsConstructor;
@@ -85,5 +86,65 @@ public class InvoiceController {
     public ResponseEntity<Void> delete(@PathVariable String id) {
         invoiceService.delete(id);
         return ResponseEntity.noContent().build();
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════════
+    //  R1.2 — Status Workflow
+    // ═══════════════════════════════════════════════════════════════════════════
+
+    @PatchMapping("/{id}/status")
+    public ResponseEntity<ApiResponse<Invoice>> updateStatus(
+            @PathVariable String id,
+            @RequestBody Map<String, String> body) {
+        String newStatus = body.get("status");
+        if (newStatus == null || newStatus.isEmpty()) {
+            return ResponseEntity.badRequest()
+                    .body(ApiResponse.error("INVALID_REQUEST", "Status is required"));
+        }
+        Invoice updated = invoiceService.updateStatus(id, newStatus);
+        return ResponseEntity.ok(ApiResponse.ok(updated));
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════════
+    //  R1.2 — Duplicate Invoice
+    // ═══════════════════════════════════════════════════════════════════════════
+
+    @PostMapping("/{id}/duplicate")
+    public ResponseEntity<ApiResponse<Invoice>> duplicate(@PathVariable String id) {
+        Invoice copy = invoiceService.duplicate(id);
+        return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.ok(copy));
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════════
+    //  R1.4 — Templates
+    // ═══════════════════════════════════════════════════════════════════════════
+
+    @GetMapping("/templates")
+    public ResponseEntity<ApiResponse<List<Invoice>>> getTemplates() {
+        return ResponseEntity.ok(ApiResponse.ok(invoiceService.getTemplates()));
+    }
+
+    @PostMapping("/{id}/save-as-template")
+    public ResponseEntity<ApiResponse<Invoice>> saveAsTemplate(
+            @PathVariable String id,
+            @RequestBody(required = false) Map<String, String> body) {
+        String templateName = body != null ? body.get("templateName") : null;
+        Invoice saved = invoiceService.saveAsTemplate(id, templateName);
+        return ResponseEntity.ok(ApiResponse.ok(saved));
+    }
+
+    @PostMapping("/create-from-template/{templateId}")
+    public ResponseEntity<ApiResponse<Invoice>> createFromTemplate(@PathVariable String templateId) {
+        Invoice newInvoice = invoiceService.createFromTemplate(templateId);
+        return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.ok(newInvoice));
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════════
+    //  R1.5 — Invoice KPIs
+    // ═══════════════════════════════════════════════════════════════════════════
+
+    @GetMapping("/kpis")
+    public ResponseEntity<ApiResponse<InvoiceKpi>> getKpis() {
+        return ResponseEntity.ok(ApiResponse.ok(invoiceService.getKpis()));
     }
 }

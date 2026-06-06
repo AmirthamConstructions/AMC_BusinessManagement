@@ -40,3 +40,23 @@ export interface RecentTransaction {
   amount: number;
   party: string;
 }
+
+export interface CompanyComparison {
+  mainRevenue: number;
+  mainExpense: number;
+  mainProfit: number;
+  mainSites: number;
+  mainActiveSites: number;
+  gstRevenue: number;
+  gstExpense: number;
+  gstProfit: number;
+  gstSites: number;
+  gstActiveSites: number;
+  combinedRevenue: number;
+  combinedExpense: number;
+  combinedProfit: number;
+  combinedSites: number;
+  combinedActiveSites: number;
+  startDate: string;
+  endDate: string;
+}

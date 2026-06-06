@@ -7,6 +7,11 @@
     }
   </div>
   <div class="header-actions">
+    <div class="preset-buttons">
+      @for (p of datePresets; track p.label) {
+        <button mat-stroked-button class="preset-btn" [class.active]="activePreset === p.label" (click)="applyPreset(p)">{{ p.label }}</button>
+      }
+    </div>
     <mat-form-field appearance="outline" class="date-field">
       <mat-label>From</mat-label>
       <input matInput type="date" [(ngModel)]="filterStartDate">
