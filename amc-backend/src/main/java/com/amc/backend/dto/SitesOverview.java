@@ -41,7 +41,7 @@ public class SitesOverview {
         private String siteId;
         private String siteName;
         private String company;
-        private Boolean isActive;
+        private String status;
         private Double quotationAmount;
         private Double totalExpense;
         private Double materialCost;

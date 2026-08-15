@@ -79,6 +79,7 @@ public class TransactionService {
         existing.setCompanyAccount(transaction.getCompanyAccount());
         existing.setModeOfPayment(transaction.getModeOfPayment());
         existing.setNotes(transaction.getNotes());
+        existing.setPaymentStatus(transaction.getPaymentStatus());
         existing.setUpdatedAt(LocalDateTime.now());
         return transactionRepository.save(existing);
     }

@@ -45,8 +45,9 @@
         <mat-label>Status</mat-label>
         <mat-select [(ngModel)]="filterStatus" (ngModelChange)="applyAllFilters()">
           <mat-option value="">All</mat-option>
-          <mat-option value="active">Active</mat-option>
-          <mat-option value="inactive">Inactive</mat-option>
+          <mat-option value="Planning">Planning</mat-option>
+          <mat-option value="Inprogress">Inprogress</mat-option>
+          <mat-option value="Completed">Completed</mat-option>
         </mat-select>
       </mat-form-field>
 
@@ -100,12 +101,12 @@
             </ng-container>
 
             <!-- Status -->
-            <ng-container matColumnDef="isActive">
+            <ng-container matColumnDef="status">
               <th mat-header-cell *matHeaderCellDef mat-sort-header>Status</th>
               <td mat-cell *matCellDef="let row">
-                <span class="status-chip" [class.active]="row.isActive" [class.inactive]="!row.isActive">
-                  <mat-icon class="status-icon">{{ row.isActive ? 'check_circle' : 'cancel' }}</mat-icon>
-                  {{ row.isActive ? 'Active' : 'Inactive' }}
+                <span class="status-chip" [ngClass]="'status-' + (row.status || 'Planning').toLowerCase()">
+                  <mat-icon class="status-icon">{{ row.status === 'Completed' ? 'check_circle' : row.status === 'Inprogress' ? 'autorenew' : 'schedule' }}</mat-icon>
+                  {{ row.status || 'Planning' }}
                 </span>
               </td>
             </ng-container>
@@ -384,11 +385,11 @@
                 </td>
               </ng-container>
 
-              <ng-container matColumnDef="isActive">
+              <ng-container matColumnDef="status">
                 <th mat-header-cell *matHeaderCellDef>Status</th>
                 <td mat-cell *matCellDef="let row">
-                  <span class="status-chip" [class.active]="row.isActive" [class.inactive]="!row.isActive">
-                    {{ row.isActive ? 'Active' : 'Inactive' }}
+                  <span class="status-chip" [ngClass]="'status-' + (row.status || 'Planning').toLowerCase()">
+                    {{ row.status || 'Planning' }}
                   </span>
                 </td>
               </ng-container>
@@ -460,12 +461,14 @@
           <mat-datepicker-toggle matSuffix [for]="duePicker"></mat-datepicker-toggle>
           <mat-datepicker #duePicker></mat-datepicker>
         </mat-form-field>
-        <div class="toggle-field">
-          <label class="toggle-label">Status</label>
-          <mat-slide-toggle formControlName="isActive" color="primary">
-            {{ siteForm.get('isActive')?.value ? 'Active' : 'Inactive' }}
-          </mat-slide-toggle>
-        </div>
+        <mat-form-field appearance="outline">
+          <mat-label>Status *</mat-label>
+          <mat-select formControlName="status">
+            <mat-option value="Planning">Planning</mat-option>
+            <mat-option value="Inprogress">Inprogress</mat-option>
+            <mat-option value="Completed">Completed</mat-option>
+          </mat-select>
+        </mat-form-field>
       </div>
     </form>
   </mat-dialog-content>

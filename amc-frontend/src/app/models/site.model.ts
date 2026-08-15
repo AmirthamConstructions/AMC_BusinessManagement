@@ -15,5 +15,5 @@ export interface Site {
   incomeHead: string;
   paymentMode: string;
   companyAccount: string;
-  isActive: boolean;
+  status: 'Planning' | 'Inprogress' | 'Completed';
 }

@@ -8,6 +8,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 
@@ -31,11 +32,11 @@ public class SiteService {
     }
 
     public List<Site> findActive() {
-        return siteRepository.findByIsActive(true);
+        return siteRepository.findByStatusIn(Arrays.asList("Planning", "Inprogress"));
     }
 
     public List<Site> findByCompanyAndActive(String company) {
-        return siteRepository.findByCompanyAndIsActive(company, true);
+        return siteRepository.findByCompanyAndStatusIn(company, Arrays.asList("Planning", "Inprogress"));
     }
 
     public Site create(Site site) {
@@ -66,7 +67,7 @@ public class SiteService {
         existing.setIncomeHead(site.getIncomeHead());
         existing.setPaymentMode(site.getPaymentMode());
         existing.setCompanyAccount(site.getCompanyAccount());
-        existing.setIsActive(site.getIsActive());
+        existing.setStatus(site.getStatus());
         existing.setUpdatedAt(LocalDateTime.now());
         return siteRepository.save(existing);
     }

@@ -23,9 +23,9 @@
         <span class="company-badge" [class.main]="analytics.company === 'Main'" [class.gst]="analytics.company === 'GST'">
           {{ analytics.company }}
         </span>
-        <span class="status-chip" [class.active]="analytics.isActive" [class.inactive]="!analytics.isActive">
-          <mat-icon class="status-icon">{{ analytics.isActive ? 'check_circle' : 'cancel' }}</mat-icon>
-          {{ analytics.isActive ? 'Active' : 'Inactive' }}
+        <span class="status-chip" [ngClass]="'status-' + (analytics.status || 'Planning').toLowerCase()">
+          <mat-icon class="status-icon">{{ analytics.status === 'Completed' ? 'check_circle' : analytics.status === 'Inprogress' ? 'autorenew' : 'schedule' }}</mat-icon>
+          {{ analytics.status || 'Planning' }}
         </span>
         @if (analytics.clientName) {
           <span class="meta-item"><mat-icon class="meta-icon">person</mat-icon>{{ analytics.clientName }}</span>
@@ -78,9 +78,20 @@
     <mat-card-content>
       <div class="kpi-icon-wrap debits"><mat-icon>arrow_circle_up</mat-icon></div>
       <div class="kpi-body">
-        <span class="kpi-value negative">{{ formatCurrency(analytics.totalDebits) }}</span>
-        <span class="kpi-label">Total Debits</span>
-        <span class="kpi-sub">{{ analytics.materialEntryCount }} material entries</span>
+        <span class="kpi-value negative">{{ formatCurrency(analytics.paidDebits) }}</span>
+        <span class="kpi-label">Paid Debits</span>
+        <span class="kpi-sub">Total debits: {{ formatCurrency(analytics.totalDebits) }}</span>
+      </div>
+    </mat-card-content>
+  </mat-card>
+
+  <mat-card class="kpi-card unpaid">
+    <mat-card-content>
+      <div class="kpi-icon-wrap unpaid"><mat-icon>pending_actions</mat-icon></div>
+      <div class="kpi-body">
+        <span class="kpi-value" style="color:#e65100">{{ formatCurrency(analytics.unpaidAmount) }}</span>
+        <span class="kpi-label">Unpaid</span>
+        <span class="kpi-sub">Pending payments</span>
       </div>
     </mat-card-content>
   </mat-card>
@@ -117,7 +128,7 @@
           {{ formatCurrency(analytics.profit) }}
         </span>
         <span class="kpi-label">Profit</span>
-        <span class="kpi-sub">ROI: {{ analytics.roi.toFixed(1) }}%</span>
+        <span class="kpi-sub">Credit − Debit − Unpaid</span>
       </div>
     </mat-card-content>
   </mat-card>
@@ -249,9 +260,28 @@
               <td mat-cell *matCellDef="let row" class="desc-cell">{{ row.description || '—' }}</td>
             </ng-container>
 
+            <ng-container matColumnDef="nature">
+              <th mat-header-cell *matHeaderCellDef mat-sort-header>Nature</th>
+              <td mat-cell *matCellDef="let row">{{ row.nature || '—' }}</td>
+            </ng-container>
+
             <ng-container matColumnDef="party">
               <th mat-header-cell *matHeaderCellDef>Party / Shop</th>
               <td mat-cell *matCellDef="let row">{{ row.party || '—' }}</td>
+            </ng-container>
+
+            <ng-container matColumnDef="modeOfPayment">
+              <th mat-header-cell *matHeaderCellDef>Mode</th>
+              <td mat-cell *matCellDef="let row">{{ row.modeOfPayment || '—' }}</td>
+            </ng-container>
+
+            <ng-container matColumnDef="paymentStatus">
+              <th mat-header-cell *matHeaderCellDef mat-sort-header>Status</th>
+              <td mat-cell *matCellDef="let row">
+                <span class="type-badge" [class.paid]="row.paymentStatus === 'Paid'" [class.unpaid]="row.paymentStatus === 'Unpaid'">
+                  {{ row.paymentStatus || 'Unpaid' }}
+                </span>
+              </td>
             </ng-container>
 
             <ng-container matColumnDef="amount">
@@ -470,8 +500,8 @@
             <tr><td class="info-key">Due Date</td><td class="info-val">{{ analytics.dueDate || '—' }}</td></tr>
             <tr><td class="info-key">Status</td>
               <td class="info-val">
-                <span class="status-chip" [class.active]="analytics.isActive" [class.inactive]="!analytics.isActive">
-                  {{ analytics.isActive ? 'Active' : 'Inactive' }}
+                <span class="status-chip" [ngClass]="'status-' + (analytics.status || 'Planning').toLowerCase()">
+                  {{ analytics.status || 'Planning' }}
                 </span>
               </td>
             </tr>
@@ -487,7 +517,9 @@
           <table class="info-table">
             <tr><td class="info-key">Quotation</td><td class="info-val bold">{{ formatCurrency(analytics.quotationAmount) }}</td></tr>
             <tr><td class="info-key">Total Credits</td><td class="info-val positive bold">{{ formatCurrency(analytics.totalCredits) }}</td></tr>
-            <tr><td class="info-key">Total Debits</td><td class="info-val negative bold">{{ formatCurrency(analytics.totalDebits) }}</td></tr>
+            <tr><td class="info-key">Paid Debits</td><td class="info-val negative bold">{{ formatCurrency(analytics.paidDebits) }}</td></tr>
+            <tr><td class="info-key">Unpaid</td><td class="info-val" style="color:#e65100;font-weight:600">{{ formatCurrency(analytics.unpaidAmount) }}</td></tr>
+            <tr><td class="info-key">Total Debits</td><td class="info-val">{{ formatCurrency(analytics.totalDebits) }}</td></tr>
             <tr><td class="info-key">Material Cost</td><td class="info-val">{{ formatCurrency(analytics.materialCost) }}</td></tr>
             <tr><td class="info-key">Labour Cost</td><td class="info-val">{{ formatCurrency(analytics.labourCost) }}</td></tr>
             <tr><td class="info-key">Other Cost</td><td class="info-val">{{ formatCurrency(analytics.otherCost) }}</td></tr>

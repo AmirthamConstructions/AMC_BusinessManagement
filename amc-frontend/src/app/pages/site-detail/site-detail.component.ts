@@ -26,7 +26,7 @@ export class SiteDetailComponent implements OnInit, AfterViewInit {
   exporting = false;
 
   // ── Charges table ──
-  chargesDisplayedColumns = ['date', 'type', 'description', 'party', 'amount'];
+  chargesDisplayedColumns = ['date', 'type', 'description', 'nature', 'party', 'modeOfPayment', 'paymentStatus', 'amount'];
   chargesDataSource = new MatTableDataSource<ChargeRow>();
   chargesSearch = '';
   chargesFilterType = '';
@@ -136,7 +136,9 @@ export class SiteDetailComponent implements OnInit, AfterViewInit {
       const search = filter.toLowerCase();
       return (data.description || '').toLowerCase().includes(search)
         || (data.type || '').toLowerCase().includes(search)
-        || (data.party || '').toLowerCase().includes(search);
+        || (data.party || '').toLowerCase().includes(search)
+        || (data.nature || '').toLowerCase().includes(search)
+        || (data.modeOfPayment || '').toLowerCase().includes(search);
     };
     this.labourDataSource.paginator = this.labourPaginator;
     this.materialsDataSource.paginator = this.matPaginator;

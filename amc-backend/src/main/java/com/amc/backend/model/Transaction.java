@@ -60,6 +60,9 @@ public class Transaction {
 
     private String notes;
 
+    @Builder.Default
+    private String paymentStatus = "Unpaid"; // Paid, Unpaid
+
     private LocalDateTime createdAt;
 
     private LocalDateTime updatedAt;

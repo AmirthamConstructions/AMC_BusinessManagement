@@ -7,13 +7,15 @@ export interface SiteAnalytics {
   quotationAmount: number;
   dateOfStart: string;
   dueDate: string;
-  isActive: boolean;
+  status: string;
 
   totalCredits: number;
   totalDebits: number;
+  paidDebits: number;
   materialCost: number;
   labourCost: number;
   otherCost: number;
+  unpaidAmount: number;
   profit: number;
   roi: number;
 
@@ -61,6 +63,9 @@ export interface ChargeRow {
   description: string;
   amount: number;
   party: string;
+  nature: string;
+  paymentStatus: string;
+  modeOfPayment: string;
 }
 
 export interface SitesOverview {
@@ -83,7 +88,7 @@ export interface SiteComparisonRow {
   siteId: string;
   siteName: string;
   company: string;
-  isActive: boolean;
+  status: string;
   quotationAmount: number;
   totalExpense: number;
   materialCost: number;

@@ -56,7 +56,7 @@ public class Site {
     private String companyAccount;
 
     @Builder.Default
-    private Boolean isActive = true;
+    private String status = "Planning"; // Planning, Inprogress, Completed
 
     private LocalDateTime createdAt;
 

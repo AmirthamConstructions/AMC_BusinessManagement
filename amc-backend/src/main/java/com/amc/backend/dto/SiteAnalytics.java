@@ -22,15 +22,17 @@ public class SiteAnalytics {
     private Double quotationAmount;
     private String dateOfStart;
     private String dueDate;
-    private Boolean isActive;
+    private String status;
 
     // ── Financial summary ──
     private Double totalCredits;
     private Double totalDebits;
+    private Double paidDebits;      // totalDebits - unpaidAmount
     private Double materialCost;
     private Double labourCost;
     private Double otherCost;
-    private Double profit;         // credits - debits
+    private Double unpaidAmount;    // sum of unpaid debit transactions
+    private Double profit;         // credits - paidDebits - unpaidAmount
     private Double roi;            // (quotation - totalDebits) / totalDebits * 100
 
     // ── Counts ──
@@ -106,5 +108,8 @@ public class SiteAnalytics {
         private String description;
         private Double amount;
         private String party;
+        private String nature;
+        private String paymentStatus;
+        private String modeOfPayment;
     }
 }

@@ -15,4 +15,5 @@ export interface Transaction {
   companyAccount: string;
   modeOfPayment: string;
   notes: string;
+  paymentStatus: 'Paid' | 'Unpaid';
 }

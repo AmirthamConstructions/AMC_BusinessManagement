@@ -19,11 +19,19 @@ import { MatSnackBar } from '@angular/material/snack-bar';
   styleUrl: './transactions.component.scss'
 })
 export class TransactionsComponent implements OnInit {
-  displayedColumns = ['date', 'transactionId', 'company', 'siteName', 'type', 'nature', 'amount', 'party', 'modeOfPayment', 'actions'];
+  displayedColumns = ['date', 'transactionId', 'company', 'siteName', 'type', 'nature', 'amount', 'party', 'modeOfPayment', 'paymentStatus', 'actions'];
   dataSource = new MatTableDataSource<Transaction>();
   allTransactions: Transaction[] = [];
   searchText = '';
   loading = false;
+
+  // Dropdown filters
+  filterCompany = '';
+  filterType = '';
+  filterSiteName = '';
+  filterNature = '';
+  uniqueSiteNames: string[] = [];
+  uniqueNatures: string[] = [];
 
   // Company split summary
   summary = {
@@ -72,7 +80,8 @@ export class TransactionsComponent implements OnInit {
     this.txnService.getAll(0, 500).subscribe({
       next: (res) => {
         this.allTransactions = res.data;
-        this.filterByCompany(this.companyFilter.selectedCompany());
+        this.extractFilterOptions();
+        this.applyAllFilters();
         this.loading = false;
       },
       error: () => {
@@ -83,17 +92,57 @@ export class TransactionsComponent implements OnInit {
   }
 
   filterByCompany(company: CompanyFilter): void {
+    this.applyAllFilters();
+  }
+
+  applyAllFilters(): void {
     let filtered = this.allTransactions;
-    if (company !== 'All') {
-      filtered = this.allTransactions.filter(t => t.company === company);
+
+    // Global company toggle
+    const globalCompany = this.companyFilter.selectedCompany();
+    if (globalCompany !== 'All') {
+      filtered = filtered.filter(t => t.company === globalCompany);
     }
+
+    // Dropdown filters
+    if (this.filterCompany) {
+      filtered = filtered.filter(t => t.company === this.filterCompany);
+    }
+    if (this.filterType) {
+      filtered = filtered.filter(t => t.type === this.filterType);
+    }
+    if (this.filterSiteName) {
+      filtered = filtered.filter(t => t.siteName === this.filterSiteName);
+    }
+    if (this.filterNature) {
+      filtered = filtered.filter(t => t.nature === this.filterNature);
+    }
+
     this.dataSource.data = filtered;
     this.computeSummary();
 
-    // Re-apply text search filter
+    // Re-apply text search
     if (this.searchText) {
       this.dataSource.filter = this.searchText.trim().toLowerCase();
     }
+  }
+
+  extractFilterOptions(): void {
+    this.uniqueSiteNames = [...new Set(this.allTransactions.map(t => t.siteName).filter(Boolean))].sort();
+    this.uniqueNatures = [...new Set(this.allTransactions.map(t => t.nature).filter(Boolean))].sort();
+  }
+
+  clearFilters(): void {
+    this.filterCompany = '';
+    this.filterType = '';
+    this.filterSiteName = '';
+    this.filterNature = '';
+    this.searchText = '';
+    this.applyAllFilters();
+  }
+
+  get hasActiveFilters(): boolean {
+    return !!(this.filterCompany || this.filterType || this.filterSiteName || this.filterNature || this.searchText);
   }
 
   computeSummary(): void {
@@ -115,7 +164,7 @@ export class TransactionsComponent implements OnInit {
   }
 
   applyFilter(): void {
-    this.dataSource.filter = this.searchText.trim().toLowerCase();
+    this.applyAllFilters();
   }
 
   deleteRow(id: string): void {
@@ -128,6 +177,17 @@ export class TransactionsComponent implements OnInit {
         error: () => this.snackBar.open('Failed to delete', 'OK', { duration: 3000 })
       });
     }
+  }
+
+  togglePaymentStatus(txn: Transaction): void {
+    const newStatus = txn.paymentStatus === 'Paid' ? 'Unpaid' : 'Paid';
+    this.txnService.update(txn.id, { ...txn, paymentStatus: newStatus }).subscribe({
+      next: () => {
+        txn.paymentStatus = newStatus;
+        this.snackBar.open(`Marked as ${newStatus}`, 'OK', { duration: 2000 });
+      },
+      error: () => this.snackBar.open('Failed to update status', 'OK', { duration: 3000 })
+    });
   }
 
   getTypeClass(type: string): string {
@@ -158,8 +218,9 @@ export class TransactionsComponent implements OnInit {
       invoiceNo: [''],
       gstNo: [''],
       companyAccount: [''],
-      modeOfPayment: [''],
-      notes: ['']
+      modeOfPayment: ['', Validators.required],
+      notes: [''],
+      paymentStatus: ['Unpaid']
     });
   }
 
@@ -180,7 +241,8 @@ export class TransactionsComponent implements OnInit {
 
   openAddForm(): void {
     this.editingId = null;
-    this.txnForm.reset({ company: 'Main', type: 'Debit' });
+    const today = new Date().toISOString().substring(0, 10);
+    this.txnForm.reset({ date: today, company: 'Main', type: 'Debit', paymentStatus: 'Unpaid' });
     this.showForm = true;
   }
 
@@ -200,7 +262,8 @@ export class TransactionsComponent implements OnInit {
       gstNo: txn.gstNo || '',
       companyAccount: txn.companyAccount || '',
       modeOfPayment: txn.modeOfPayment || '',
-      notes: txn.notes || ''
+      notes: txn.notes || '',
+      paymentStatus: txn.paymentStatus || 'Unpaid'
     });
     this.showForm = true;
   }

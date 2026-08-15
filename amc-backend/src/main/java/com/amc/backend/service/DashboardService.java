@@ -70,7 +70,7 @@ public class DashboardService {
 
         // Sites
         List<Site> allSites = siteRepository.findAll();
-        long activeSites   = allSites.stream().filter(s -> Boolean.TRUE.equals(s.getIsActive())).count();
+        long activeSites   = allSites.stream().filter(s -> !"Completed".equals(s.getStatus())).count();
         long inactiveSites = allSites.size() - activeSites;
 
         DashboardKpis kpis = DashboardKpis.builder()
@@ -210,13 +210,13 @@ public class DashboardService {
         double mainRevenue = sumByTypeAndCompany(transactions, "Credit", "Main");
         double mainExpense = sumByTypeAndCompany(transactions, "Debit", "Main");
         long mainSites = allSites.stream().filter(s -> "Main".equalsIgnoreCase(s.getCompany())).count();
-        long mainActive = allSites.stream().filter(s -> "Main".equalsIgnoreCase(s.getCompany()) && Boolean.TRUE.equals(s.getIsActive())).count();
+        long mainActive = allSites.stream().filter(s -> "Main".equalsIgnoreCase(s.getCompany()) && !"Completed".equals(s.getStatus())).count();
 
         // GST company
         double gstRevenue = sumByTypeAndCompany(transactions, "Credit", "GST");
         double gstExpense = sumByTypeAndCompany(transactions, "Debit", "GST");
         long gstSites = allSites.stream().filter(s -> "GST".equalsIgnoreCase(s.getCompany())).count();
-        long gstActive = allSites.stream().filter(s -> "GST".equalsIgnoreCase(s.getCompany()) && Boolean.TRUE.equals(s.getIsActive())).count();
+        long gstActive = allSites.stream().filter(s -> "GST".equalsIgnoreCase(s.getCompany()) && !"Completed".equals(s.getStatus())).count();
 
         return CompanyComparison.builder()
                 .mainRevenue(round2(mainRevenue))

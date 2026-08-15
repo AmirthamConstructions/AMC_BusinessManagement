@@ -82,8 +82,14 @@ public class SiteAnalyticsService {
         double labourCost = labourTxns.stream()
                 .mapToDouble(t -> t.getAmount() != null ? t.getAmount() : 0).sum();
 
+        double unpaidAmount = transactions.stream()
+                .filter(t -> "Debit".equalsIgnoreCase(t.getType()))
+                .filter(t -> "Unpaid".equalsIgnoreCase(t.getPaymentStatus()))
+                .mapToDouble(t -> t.getAmount() != null ? t.getAmount() : 0).sum();
+
+        double paidDebits = totalDebits - unpaidAmount;
         double otherCost = totalDebits - labourCost;
-        double profit = totalCredits - totalDebits;
+        double profit = totalCredits - paidDebits - unpaidAmount;
 
         double quotation = site.getQuotationAmount() != null ? site.getQuotationAmount() : 0;
         double roi = totalDebits > 0 ? (quotation - totalDebits) / totalDebits * 100 : 0;
@@ -166,6 +172,9 @@ public class SiteAnalyticsService {
                         .description(t.getDescription() != null ? t.getDescription() : t.getNature())
                         .amount(t.getAmount())
                         .party(t.getParty())
+                        .nature(t.getNature())
+                        .paymentStatus(t.getPaymentStatus() != null ? t.getPaymentStatus() : "Unpaid")
+                        .modeOfPayment(t.getModeOfPayment())
                         .build());
             }
         }
@@ -176,6 +185,9 @@ public class SiteAnalyticsService {
                     .description(m.getItemName() + (m.getQuantity() != null ? " × " + m.getQuantity() : ""))
                     .amount(m.getAmount())
                     .party(m.getShopName())
+                    .nature("Material")
+                    .paymentStatus("Paid")
+                    .modeOfPayment(null)
                     .build());
         }
         allCharges.sort((a, b) -> b.getDate().compareTo(a.getDate()));
@@ -189,12 +201,14 @@ public class SiteAnalyticsService {
                 .quotationAmount(quotation)
                 .dateOfStart(site.getDateOfStart() != null ? site.getDateOfStart().toString() : null)
                 .dueDate(site.getDueDate() != null ? site.getDueDate().toString() : null)
-                .isActive(site.getIsActive())
+                .status(site.getStatus())
                 .totalCredits(totalCredits)
                 .totalDebits(totalDebits)
+                .paidDebits(Math.round(paidDebits * 100.0) / 100.0)
                 .materialCost(materialCost)
                 .labourCost(labourCost)
                 .otherCost(otherCost)
+                .unpaidAmount(Math.round(unpaidAmount * 100.0) / 100.0)
                 .profit(profit)
                 .roi(Math.round(roi * 100.0) / 100.0)
                 .transactionCount(transactions.size())
@@ -268,7 +282,7 @@ public class SiteAnalyticsService {
                     .siteId(site.getSiteId())
                     .siteName(site.getName())
                     .company(site.getCompany())
-                    .isActive(site.getIsActive())
+                    .status(site.getStatus())
                     .quotationAmount(quotation)
                     .totalExpense(debits)
                     .materialCost(matCost)
@@ -289,7 +303,7 @@ public class SiteAnalyticsService {
                 .limit(5)
                 .collect(Collectors.toList());
 
-        long activeSites = allSites.stream().filter(s -> Boolean.TRUE.equals(s.getIsActive())).count();
+        long activeSites = allSites.stream().filter(s -> !"Completed".equals(s.getStatus())).count();
         long mainSites = allSites.stream().filter(s -> "Main".equalsIgnoreCase(s.getCompany())).count();
 
         return SitesOverview.builder()
@@ -331,7 +345,7 @@ public class SiteAnalyticsService {
                 {"Quotation", analytics.getQuotationAmount() != null ? analytics.getQuotationAmount().toString() : ""},
                 {"Start Date", analytics.getDateOfStart() != null ? analytics.getDateOfStart() : ""},
                 {"Due Date", analytics.getDueDate() != null ? analytics.getDueDate() : ""},
-                {"Status", Boolean.TRUE.equals(analytics.getIsActive()) ? "Active" : "Inactive"},
+                {"Status", analytics.getStatus() != null ? analytics.getStatus() : "Planning"},
                 {"Total Credits", String.valueOf(analytics.getTotalCredits())},
                 {"Total Debits", String.valueOf(analytics.getTotalDebits())},
                 {"Material Cost", String.valueOf(analytics.getMaterialCost())},

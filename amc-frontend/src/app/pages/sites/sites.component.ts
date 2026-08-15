@@ -27,8 +27,8 @@ export class SitesComponent implements OnInit, AfterViewInit {
   selectedTab = 0;
 
   // ── Sites table ──
-  displayedColumns = ['name', 'clientName', 'company', 'quotationAmount', 'isActive', 'actions'];
-  comparisonColumns = ['siteName', 'company', 'quotationAmount', 'totalExpense', 'materialCost', 'labourCost', 'profit', 'roi', 'isActive'];
+  displayedColumns = ['name', 'clientName', 'company', 'quotationAmount', 'status', 'actions'];
+  comparisonColumns = ['siteName', 'company', 'quotationAmount', 'totalExpense', 'materialCost', 'labourCost', 'profit', 'roi', 'status'];
   dataSource = new MatTableDataSource<Site>();
   allSites: Site[] = [];
   searchText = '';
@@ -154,7 +154,7 @@ export class SitesComponent implements OnInit, AfterViewInit {
       contactNumber:   [site?.contactNumber || ''],
       dateOfStart:     [site?.dateOfStart ? new Date(site.dateOfStart) : null],
       dueDate:         [site?.dueDate ? new Date(site.dueDate) : null],
-      isActive:        [site?.isActive !== undefined ? site.isActive : true]
+      status:          [site?.status || 'Planning', Validators.required]
     });
   }
 
@@ -180,10 +180,8 @@ export class SitesComponent implements OnInit, AfterViewInit {
     if (this.filterCompany) {
       filtered = filtered.filter(s => s.company === this.filterCompany);
     }
-    if (this.filterStatus === 'active') {
-      filtered = filtered.filter(s => s.isActive);
-    } else if (this.filterStatus === 'inactive') {
-      filtered = filtered.filter(s => !s.isActive);
+    if (this.filterStatus) {
+      filtered = filtered.filter(s => s.status === this.filterStatus);
     }
     this.dataSource.data = filtered;
     this.dataSource.filter = this.searchText.trim().toLowerCase();
@@ -243,7 +241,7 @@ export class SitesComponent implements OnInit, AfterViewInit {
       contactNumber:   raw.contactNumber,
       dateOfStart:     raw.dateOfStart ? this.formatDate(raw.dateOfStart) : undefined,
       dueDate:         raw.dueDate ? this.formatDate(raw.dueDate) : undefined,
-      isActive:        raw.isActive
+      status:          raw.status
     };
 
     const op = this.editingSite
